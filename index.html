@@ -3,115 +3,128 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BaaS Firestore Demo</title>
+    <title>Облачное приложение</title>
     <style>
-        /* Стили оставлены без изменений, они отличные */
-        body { font-family: 'Inter', sans-serif; background: #f4f7f6; display: flex; flex-direction: column; align-items: center; padding: 20px; margin: 0; }
-        .container { width: 100%; max-width: 500px; background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); box-sizing: border-box; }
+        body { font-family: 'Inter', sans-serif; background: #f4f7f6; display: flex; flex-direction: column; align-items: center; padding: 20px; }
+        .container { width: 100%; max-width: 500px; background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-bottom: 20px; }
+        .auth-bar { background: white; padding: 15px; border-radius: 12px; margin-bottom: 20px; display: flex; align-items: center; gap: 15px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+        .user-avatar { width: 40px; height: 40px; border-radius: 50%; border: 2px solid #007bff; }
         input { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; }
-        button#mainBtn { background: #007bff; color: white; border: none; padding: 12px; border-radius: 6px; width: 100%; font-weight: 600; cursor: pointer; transition: 0.3s; }
-        button#mainBtn:disabled { background: #ccc; }
-        #feed { width: 100%; max-width: 500px; margin-top: 20px; }
-        .post { background: #fff; border: 1px solid #eaeaea; padding: 15px; margin-top: 15px; border-radius: 8px; position: relative; }
-        .like-btn { cursor: pointer; border: none; background: #f8f9fa; padding: 5px 12px; border-radius: 20px; font-size: 14px; }
-        .time { font-size: 11px; color: #999; float: right; }
+        button { background: #007bff; color: white; border: none; padding: 12px; border-radius: 6px; width: 100%; font-weight: 600; cursor: pointer; transition: 0.3s; }
+        button:hover { background: #0056b3; }
+        .logout-btn { background: #ff4757; padding: 8px 15px; width: auto; font-size: 14px; }
+        .post { background: #fff; border: 1px solid #eaeaea; padding: 15px; margin-top: 15px; border-radius: 8px; width: 100%; max-width: 500px; }
+        .post-header { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+        .post-avatar { width: 30px; height: 30px; border-radius: 50%; }
+        .like-btn { cursor: pointer; border: none; background: #f8f9fa; padding: 5px 12px; border-radius: 20px; margin-top: 10px; }
+        .time { font-size: 11px; color: #999; margin-left: auto; }
     </style>
 </head>
 <body>
 
-    <div class="container">
-        <h3>Панель управления</h3>
-        <input type="text" id="name" placeholder="Имя профиля" maxlength="30">
-        <input type="email" id="email" placeholder="Рабочий Email">
+    <div id="authSection" class="container" style="text-align: center;">
+        <button id="loginBtn">Войти через Google</button>
+        <div id="userInfo" style="display: none;" class="auth-bar">
+            <img id="userPhoto" class="user-avatar" src="" alt="Avatar">
+            <span id="userName" style="font-weight: bold;"></span>
+            <button id="logoutBtn" class="logout-btn">Выйти</button>
+        </div>
+    </div>
+
+    <div id="messageForm" class="container" style="display: none;">
+        <h3>Создать запись</h3>
+        <input type="text" id="name" placeholder="Имя профиля" readonly>
+        <input type="email" id="email" placeholder="Ваш Email" readonly>
+        <input type="text" id="content" placeholder="Что у вас нового?">
         <button id="mainBtn">Опубликовать в облако</button>
     </div>
 
-    <div id="feed"></div>
+    <div id="feed" style="width: 100%; max-width: 500px;"></div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js";
-        import { 
-            getFirestore, collection, addDoc, query, orderBy, onSnapshot, 
-            serverTimestamp, updateDoc, doc, increment 
-        } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, query, orderBy, onSnapshot, serverTimestamp, updateDoc, doc, increment } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js";
+        import { getAuth, signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-auth.js";
 
-        // Для GitHub: в идеале ключи должны подтягиваться из окружения, 
-        // но для статического сайта это база.
+        // ТВОИ ДАННЫЕ ИЗ ГУГЛ ФАЙРБЕЙС
         const firebaseConfig = {
-        apiKey: "AIzaSyAQAWIs7YCU-gb1ae00xGF78Hnp84auIIg",
-        authDomain: "vladidmir-b24a1.firebaseapp.com",
-        projectId: "vladidmir-b24a1",
-        storageBucket: "vladidmir-b24a1.firebasestorage.app",
-        messagingSenderId: "833649325991",
-        appId: "1:833649325991:web:da1b66ec85543efc002882",
-        measurementId: "G-JXE3L7JHM2"
+            apiKey: "AIzaSyAQAwIs7YCU-gb1aeOOxGF78Hnp84auIIg",
+            authDomain: "vladidmir-b24a1.firebaseapp.com",
+            projectId: "vladidmir-b24a1",
+            storageBucket: "vladidmir-b24a1.firebasestorage.app",
+            messagingSenderId: "833649325991",
+            appId: "1:833649325991:web:da1b66ec85543efc002882",
+            measurementId: "G-JXE3L7JHM2"
         };
 
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
+        const auth = getAuth(app);
+        const provider = new GoogleAuthProvider();
 
-        // Функция для безопасного отображения текста (защита от XSS)
-        const sanitize = (str) => {
-            const div = document.createElement('div');
-            div.textContent = str;
-            return div.innerHTML;
-        };
+        const loginBtn = document.getElementById('loginBtn');
+        const logoutBtn = document.getElementById('logoutBtn');
+        const userInfo = document.getElementById('userInfo');
+        const messageForm = document.getElementById('messageForm');
+
+        loginBtn.onclick = () => signInWithPopup(auth, provider);
+        logoutBtn.onclick = () => signOut(auth);
+
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                loginBtn.style.display = 'none';
+                userInfo.style.display = 'flex';
+                messageForm.style.display = 'block';
+                document.getElementById('userName').innerText = user.displayName;
+                document.getElementById('userPhoto').src = user.photoURL;
+                document.getElementById('name').value = user.displayName;
+                document.getElementById('email').value = user.email;
+            } else {
+                loginBtn.style.display = 'block';
+                userInfo.style.display = 'none';
+                messageForm.style.display = 'none';
+            }
+        });
 
         window.processLike = async (id) => {
             try {
-                const docRef = doc(db, "requests", id);
-                await updateDoc(docRef, { likes: increment(1) });
-            } catch (e) {
-                console.error("Update failed:", e);
-            }
+                await updateDoc(doc(db, "requests", id), { likes: increment(1) });
+            } catch (e) { alert("Ошибка при лайке. Проверьте правила (Rules) в Firestore."); }
         };
 
-        const btn = document.getElementById('mainBtn');
-        btn.onclick = async () => {
-            const name = document.getElementById('name').value.trim();
-            const email = document.getElementById('email').value.trim();
-
-            if (name.length < 2 || !email.includes('@')) {
-                return alert("Пожалуйста, введите корректные данные");
-            }
-
-            btn.disabled = true;
+        document.getElementById('mainBtn').onclick = async () => {
+            const content = document.getElementById('content').value;
+            if (!content) return alert("Введите текст!");
             try {
                 await addDoc(collection(db, "requests"), {
-                    name,
-                    email,
+                    name: auth.currentUser.displayName,
+                    email: auth.currentUser.email,
+                    photo: auth.currentUser.photoURL,
+                    text: content,
                     likes: 0,
                     timestamp: serverTimestamp()
                 });
-                document.getElementById('name').value = "";
-                document.getElementById('email').value = "";
-            } catch (e) {
-                alert("Ошибка доступа: проверьте правила Firestore Rules");
-            } finally {
-                btn.disabled = false;
-            }
+                document.getElementById('content').value = "";
+            } catch (e) { alert("Ошибка записи! Проверьте правила доступа в консоли Firebase."); }
         };
 
         const q = query(collection(db, "requests"), orderBy("timestamp", "desc"));
         onSnapshot(q, (snapshot) => {
             const feed = document.getElementById('feed');
-            feed.innerHTML = ""; // Очищаем ленту
-            
+            feed.innerHTML = "";
             snapshot.forEach((doc) => {
                 const data = doc.data();
-                const postDate = data.timestamp ? data.timestamp.toDate().toLocaleTimeString() : "сейчас";
-                
-                // Создаем элемент через шаблонную строку, но прогоняем данные через sanitize
-                const postHtml = `
+                feed.innerHTML += `
                     <div class="post">
-                        <span class="time">${postDate}</span>
-                        <b>${sanitize(data.name)}</b>
-                        <p style="margin: 5px 0;">${sanitize(data.email)}</p>
-                        <button class="like-btn" onclick="processLike('${doc.id}')">
-                            👍 ${data.likes || 0}
-                        </button>
-                    </div>`;
-                feed.insertAdjacentHTML('beforeend', postHtml);
+                        <div class="post-header">
+                            <img src="${data.photo || 'https://via.placeholder.com/30'}" class="post-avatar">
+                            <b>${data.name}</b>
+                            <span class="time">${data.timestamp?.toDate().toLocaleTimeString() || '...'}</span>
+                        </div>
+                        <p>${data.text || ""}</p>
+                        <button class="like-btn" onclick="processLike('${doc.id}')">👍 ${data.likes || 0}</button>
+                    </div>
+                `;
             });
         });
     </script>
