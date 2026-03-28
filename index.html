@@ -3,18 +3,51 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Supabase Profiles</title>
+    <title>Supabase Status Monitor</title>
     <style>
-        /* Добавил базовые стили, чтобы элементы со скринов были видны */
-        body { font-family: sans-serif; padding: 20px; background: #f0f2f5; }
-        .user-item { display: flex; align-items: center; background: white; padding: 10px; margin-bottom: 5px; border-radius: 8px; gap: 10px; }
-        .status-dot { width: 12px; height: 12px; border-radius: 50%; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f0f2f5; padding: 20px; display: flex; flex-direction: column; align-items: center; }
+        
+        /* Общие контейнеры */
+        .card { background: white; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); padding: 20px; width: 100%; max-width: 500px; margin-bottom: 20px; box-sizing: border-box; }
+        h3 { margin-top: 0; font-size: 18px; color: #000; }
+        .sub-text { font-size: 14px; color: #333; margin-bottom: 15px; }
+
+        /* Сетка кнопок */
+        .status-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .status-btn { border: none; border-radius: 8px; padding: 12px; color: white; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; transition: 0.2s; }
+        .status-btn:hover { opacity: 0.9; transform: translateY(-1px); }
+
+        /* Цвета кнопок как на фото */
+        .btn-study { background-color: #28a745; }
+        .btn-coffee { background-color: #ffc107; color: #000; }
+        .btn-game { background-color: #17a2b8; }
+        .btn-home { background-color: #6c757d; }
+
+        /* Список группы */
+        .user-item { display: flex; align-items: center; padding: 15px 0; border-top: 1px solid #eee; gap: 12px; }
+        .user-item:first-of-type { border-top: none; }
+        .status-dot { width: 10px; height: 10px; border-radius: 50%; }
+        .user-name { font-weight: bold; font-size: 16px; margin: 0; }
+        .user-status { font-size: 13px; color: #888; margin: 2px 0 0 0; }
     </style>
 </head>
 <body>
 
-    <div id="myInfo">Загрузка...</div>
-    <div id="groupList"></div>
+    <div class="card">
+        <h3>Мой профиль</h3>
+        <div id="myInfo" class="sub-text">Вы зашли как: Загрузка...</div>
+        <div class="status-grid">
+            <button class="status-btn btn-study" onclick="changeStatus('📚 Учусь', '#28a745')">📚 Учусь</button>
+            <button class="status-btn btn-coffee" onclick="changeStatus('☕ Кофе-брейк', '#ffc107')">☕ Кофе</button>
+            <button class="status-btn btn-game" onclick="changeStatus('🎮 В игре', '#17a2b8')">🎮 В игре</button>
+            <button class="status-btn btn-home" onclick="changeStatus('🏠 Дома', '#6c757d')">🏠 Дома</button>
+        </div>
+    </div>
+
+    <div class="card">
+        <h3>Монитор группы</h3>
+        <div id="groupList"></div>
+    </div>
 
     <script type="module">
         import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm'
@@ -23,6 +56,7 @@
         const KEY = 'sb_publishable_ThtftS6uBeaKf8FyndIFtg_O0HMJ5yh';
         const supabase = createClient(URL, KEY);
 
+        // Твой ID
         const MY_ID = '1d8b0a38-3786-4145-9e2a-a68ca3b42ffc';
 
         window.changeStatus = async (text, color) => {
@@ -32,7 +66,7 @@
                 .eq('id', MY_ID);
 
             if (error) {
-                alert("Ошибка! Проверьте RLS политики в Supabase.");
+                alert("Ошибка RLS! Проверьте политики в Supabase.");
                 console.error(error);
             } else {
                 fetchGroup();
@@ -47,13 +81,14 @@
 
             if (error) return console.error(error);
 
+            // Отрисовка списка как на картинке
             const list = document.getElementById('groupList');
             list.innerHTML = data.map(user => `
                 <div class="user-item">
                     <div class="status-dot" style="background: ${user.color || '#ccc'}"></div>
-                    <div style="flex-grow: 1;">
-                        <strong>${user.username}</strong><br>
-                        <small style="color: #666;">${user.status || 'Статус не задан'}</small>
+                    <div>
+                        <p class="user-name">${user.username}</p>
+                        <p class="user-status">${user.status || 'Нет статуса'}</p>
                     </div>
                 </div>
             `).join('');
@@ -63,8 +98,9 @@
         }
 
         fetchGroup();
-
         setInterval(fetchGroup, 5000);
     </script>
+</body>
+</html>
 </body>
 </html>
