@@ -3,65 +3,68 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Private Cloud Chat</title>
+    <title>Cloud Chat App</title>
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #ebedef; margin: 0; display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
+        body { font-family: 'Inter', sans-serif; background: #f4f7f6; display: flex; flex-direction: column; align-items: center; padding: 20px; }
         
-        /* Шапка профиля */
-        .auth-bar { background: white; width: 100%; max-width: 600px; padding: 15px 25px; border-radius: 15px; margin-top: 20px; display: flex; align-items: center; box-shadow: 0 2px 10px rgba(0,0,0,0.05); box-sizing: border-box; }
-        .user-avatar { width: 45px; height: 45px; border-radius: 50%; margin-right: 15px; background: #4caf50; }
-        .user-info-text { flex-grow: 1; }
-        .logout-link { color: #ff4757; cursor: pointer; font-size: 12px; font-weight: bold; text-decoration: none; text-transform: uppercase; }
+        /* Шапка как на фото */
+        .auth-bar { background: white; padding: 15px; border-radius: 12px; width: 100%; max-width: 500px; display: flex; align-items: center; gap: 15px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); margin-bottom: 20px; }
+        .user-avatar { width: 45px; height: 45px; border-radius: 50%; border: 2px solid #007bff; }
+        .logout-btn { background: none; color: #ff4757; border: none; font-weight: bold; cursor: pointer; font-size: 12px; text-transform: uppercase; padding: 0; width: auto; }
 
-        /* Контейнер чата */
-        .chat-container { width: 100%; max-width: 600px; background: white; border-radius: 15px; margin-top: 20px; display: flex; flex-direction: column; height: 70vh; box-shadow: 0 4px 20px rgba(0,0,0,0.08); overflow: hidden; }
-        
-        /* Список сообщений */
-        #feed { flex-grow: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; background: #fdfdfd; }
-        
-        /* Стили сообщений (бабблы) */
-        .msg { max-width: 70%; padding: 10px 15px; border-radius: 18px; font-size: 14px; position: relative; line-height: 1.4; }
-        .msg.my { align-self: flex-end; background: #007bff; color: white; border-bottom-right-radius: 2px; }
-        .msg.their { align-self: flex-start; background: #e9ecef; color: #333; border-bottom-left-radius: 2px; }
-        
-        /* Поле ввода */
-        .input-area { border-top: 1px solid #eee; padding: 15px; display: flex; gap: 10px; background: white; }
-        input { flex-grow: 1; padding: 12px; border: 1px solid #ddd; border-radius: 25px; outline: none; transition: 0.2s; }
-        input:focus { border-color: #007bff; }
-        button#sendBtn { background: #007bff; color: white; border: none; width: 45px; height: 45px; border-radius: 50%; cursor: pointer; font-size: 18px; display: flex; align-items: center; justify-content: center; }
+        /* Контейнер для формы и ленты */
+        .container { width: 100%; max-width: 500px; background: white; padding: 20px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-bottom: 20px; box-sizing: border-box; }
+        input { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; }
+        button#mainBtn { background: #007bff; color: white; border: none; padding: 12px; border-radius: 8px; width: 100%; font-weight: 600; cursor: pointer; }
 
-        #loginSection { margin-top: 50px; }
-        .login-btn { background: #4285f4; color: white; padding: 15px 30px; border-radius: 8px; border: none; cursor: pointer; font-weight: bold; }
+        /* Лента сообщений (бабблы) */
+        #feed { width: 100%; max-width: 500px; display: flex; flex-direction: column; gap: 15px; }
+        .post { max-width: 85%; padding: 12px 16px; border-radius: 18px; position: relative; box-shadow: 0 2px 5px rgba(0,0,0,0.03); }
+        
+        /* Твои сообщения (Синие, справа) */
+        .post.my-post { align-self: flex-end; background: #007bff; color: white; border-bottom-right-radius: 2px; }
+        /* Чужие сообщения (Серые, слева) */
+        .post.their-post { align-self: flex-start; background: white; color: #333; border: 1px solid #eee; border-bottom-left-radius: 2px; }
+
+        .post-header { display: flex; align-items: center; gap: 8px; margin-bottom: 5px; font-size: 12px; font-weight: bold; }
+        .post-avatar { width: 24px; height: 24px; border-radius: 50%; }
+        .time { font-size: 10px; opacity: 0.7; margin-left: auto; }
+        
+        /* Кнопка лайка внутри баббла */
+        .like-btn { cursor: pointer; border: none; background: rgba(0,0,0,0.05); padding: 4px 10px; border-radius: 12px; font-size: 12px; margin-top: 8px; transition: 0.2s; }
+        .my-post .like-btn { background: rgba(255,255,255,0.2); color: white; }
     </style>
 </head>
 <body>
 
-    <div id="loginSection">
-        <button class="login-btn" id="loginBtn">Войти через Google</button>
-    </div>
-
-    <div id="userInfo" class="auth-bar" style="display: none;">
-        <img id="userPhoto" class="user-avatar" src="" alt="Avatar">
-        <div class="user-info-text">
-            <div id="userName" style="font-weight: bold; color: #333;"></div>
-            <a class="logout-link" id="logoutBtn">Выйти</a>
+    <div id="authSection" class="container" style="text-align: center;">
+        <button id="loginBtn" style="background:#4285f4; color:white; border:none; padding:15px; border-radius:8px; width:100%; cursor:pointer;">Войти через Google</button>
+        
+        <div id="userInfo" style="display: none;" class="auth-bar">
+            <img id="userPhoto" class="user-avatar" src="" alt="Avatar">
+            <div style="display:flex; flex-direction:column; align-items:flex-start;">
+                <span id="userName" style="font-weight: bold;"></span>
+                <button id="logoutBtn" class="logout-btn">Выйти</button>
+            </div>
         </div>
     </div>
 
-    <div id="chatApp" class="chat-container" style="display: none;">
-        <div id="feed"></div>
-        <div class="input-area">
-            <input type="text" id="content" placeholder="Ваше сообщение...">
-            <button id="sendBtn">➤</button>
+    <div id="messageForm" class="container" style="display: none;">
+        <input type="text" id="name" placeholder="Имя профиля" readonly>
+        <input type="email" id="email" placeholder="Ваш Email" readonly>
+        <div style="display: flex; gap: 10px;">
+            <input type="text" id="content" placeholder="Сообщение...">
+            <button id="mainBtn" style="width: 50px;">➤</button>
         </div>
     </div>
+
+    <div id="feed"></div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js";
-        import { getFirestore, collection, addDoc, query, orderBy, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, query, orderBy, onSnapshot, serverTimestamp, updateDoc, doc, increment } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js";
         import { getAuth, signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-auth.js";
 
-        // ТВОИ КОНФИГИ
         const firebaseConfig = {
             apiKey: "AIzaSyAQAwIs7YCU-gb1aeOOxGF78Hnp84auIIg",
             authDomain: "vladidmir-b24a1.firebaseapp.com",
@@ -77,62 +80,75 @@
         const auth = getAuth(app);
         const provider = new GoogleAuthProvider();
 
-        const loginBtn = document.getElementById('loginBtn');
-        const logoutBtn = document.getElementById('logoutBtn');
-        const chatApp = document.getElementById('chatApp');
-        const userInfo = document.getElementById('userInfo');
-        const feed = document.getElementById('feed');
-
-        loginBtn.onclick = () => signInWithPopup(auth, provider);
-        logoutBtn.onclick = () => signOut(auth);
+        // ТВОЯ ФУНКЦИЯ ЛАЙКА (БЕЗ ИЗМЕНЕНИЙ)
+        window.processLike = async (id) => {
+            try {
+                await updateDoc(doc(db, "requests", id), { likes: increment(1) });
+            } catch (e) { alert("Ошибка при лайке."); }
+        };
 
         onAuthStateChanged(auth, (user) => {
             if (user) {
-                loginSection.style.display = 'none';
-                userInfo.style.display = 'flex';
-                chatApp.style.display = 'flex';
+                document.getElementById('loginBtn').style.display = 'none';
+                document.getElementById('userInfo').style.display = 'flex';
+                document.getElementById('messageForm').style.display = 'block';
                 document.getElementById('userName').innerText = user.displayName;
                 document.getElementById('userPhoto').src = user.photoURL;
-                loadMessages();
+                document.getElementById('name').value = user.displayName;
+                document.getElementById('email').value = user.email;
             } else {
-                loginSection.style.display = 'block';
-                userInfo.style.display = 'none';
-                chatApp.style.display = 'none';
+                document.getElementById('loginBtn').style.display = 'block';
+                document.getElementById('userInfo').style.display = 'none';
+                document.getElementById('messageForm').style.display = 'none';
             }
         });
 
-        // Функция отправки
-        document.getElementById('sendBtn').onclick = async () => {
-            const text = document.getElementById('content').value;
-            if (!text.trim()) return;
-            
+        document.getElementById('loginBtn').onclick = () => signInWithPopup(auth, provider);
+        document.getElementById('logoutBtn').onclick = () => signOut(auth);
+
+        // ТВОЯ ФУНКЦИЯ ОТПРАВКИ (С ТЕМИ ЖЕ ПОЛЯМИ)
+        document.getElementById('mainBtn').onclick = async () => {
+            const content = document.getElementById('content').value;
+            if (!content) return;
             try {
-                await addDoc(collection(db, "messages"), {
-                    uid: auth.currentUser.uid,
+                await addDoc(collection(db, "requests"), {
+                    uid: auth.currentUser.uid, // добавил только это для разделения сторон
                     name: auth.currentUser.displayName,
-                    text: text,
+                    email: auth.currentUser.email,
+                    photo: auth.currentUser.photoURL,
+                    text: content,
+                    likes: 0,
                     timestamp: serverTimestamp()
                 });
                 document.getElementById('content').value = "";
-            } catch (e) { alert("Ошибка отправки!"); }
+            } catch (e) { alert("Ошибка записи!"); }
         };
 
-        // Загрузка сообщений
-        function loadMessages() {
-            const q = query(collection(db, "messages"), orderBy("timestamp", "asc"));
-            onSnapshot(q, (snapshot) => {
-                feed.innerHTML = "";
-                snapshot.forEach((doc) => {
-                    const data = doc.data();
-                    const isMy = data.uid === auth.currentUser.uid;
-                    const msgDiv = document.createElement('div');
-                    msgDiv.classList.add('msg', isMy ? 'my' : 'their');
-                    msgDiv.innerText = data.text;
-                    feed.appendChild(msgDiv);
-                });
-                feed.scrollTop = feed.scrollHeight; // Автопрокрутка вниз
+        // ТВОЯ ЛЕНТА (ОБНОВЛЕННЫЙ ДИЗАЙН)
+        const q = query(collection(db, "requests"), orderBy("timestamp", "asc"));
+        onSnapshot(q, (snapshot) => {
+            const feed = document.getElementById('feed');
+            feed.innerHTML = "";
+            snapshot.forEach((docSnapshot) => {
+                const data = docSnapshot.data();
+                const isMy = data.uid === auth.currentUser?.uid;
+                
+                feed.innerHTML += `
+                    <div class="post ${isMy ? 'my-post' : 'their-post'}">
+                        <div class="post-header">
+                            <img src="${data.photo || ''}" class="post-avatar">
+                            <span>${data.name}</span>
+                            <span class="time">${data.timestamp?.toDate().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) || ''}</span>
+                        </div>
+                        <div>${data.text}</div>
+                        <button class="like-btn" onclick="processLike('${docSnapshot.id}')">
+                            👍 ${data.likes || 0}
+                        </button>
+                    </div>
+                `;
             });
-        }
+            window.scrollTo(0, document.body.scrollHeight);
+        });
     </script>
 </body>
 </html>
