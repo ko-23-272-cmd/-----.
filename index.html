@@ -2,157 +2,97 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Private Cloud Chat</title>
+    <title>Монитор статусов</title>
     <style>
-        /* ОБНУЛЯЕМ СТИЛИ И ЗАДАЕМ ФОН КАК НА ФОТО */
-        body { font-family: 'Inter', sans-serif; background: #ebedef; margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; }
-        
-        /* ВЕРХНЯЯ ПАНЕЛЬ (ПРОФИЛЬ) */
-        .auth-bar { background: white; padding: 15px 20px; border-radius: 12px; width: 100%; max-width: 500px; display: flex; align-items: center; gap: 15px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); margin-bottom: 20px; box-sizing: border-box; }
-        .user-avatar { width: 45px; height: 45px; border-radius: 50%; border: 2px solid #007bff; object-fit: cover; }
-        .logout-btn { color: #ff4757; border: none; background: none; font-weight: bold; cursor: pointer; font-size: 11px; text-transform: uppercase; padding: 0; }
-
-        /* ОКНО ЧАТА */
-        .chat-window { width: 100%; max-width: 500px; background: white; border-radius: 15px; display: flex; flex-direction: column; height: 60vh; box-shadow: 0 4px 15px rgba(0,0,0,0.05); overflow: hidden; }
-        
-        /* ЛЕНТА СООБЩЕНИЙ */
-        #feed { flex-grow: 1; padding: 15px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; background: #fff; }
-        
-        /* БАББЛЫ СООБЩЕНИЙ */
-        .post { max-width: 75%; padding: 10px 14px; border-radius: 15px; font-size: 14px; line-height: 1.4; position: relative; }
-        
-        /* МОИ (Синие, справа) */
-        .my-post { align-self: flex-end; background: #007bff; color: white; border-bottom-right-radius: 2px; }
-        
-        /* ЧУЖИЕ (Серые, слева) */
-        .their-post { align-self: flex-start; background: #e9ecef; color: #333; border-bottom-left-radius: 2px; }
-
-        .post-info { font-size: 10px; margin-bottom: 4px; display: flex; justify-content: space-between; opacity: 0.8; }
-        .like-btn { border: none; background: rgba(0,0,0,0.1); color: inherit; padding: 3px 8px; border-radius: 10px; font-size: 11px; cursor: pointer; margin-top: 5px; }
-
-        /* ФОРМА ОТПРАВКИ ВНИЗУ */
-        .input-area { padding: 15px; border-top: 1px solid #eee; display: flex; gap: 10px; background: white; }
-        #content { flex-grow: 1; padding: 10px 15px; border: 1px solid #ddd; border-radius: 20px; outline: none; }
-        #mainBtn { background: #007bff; color: white; border: none; width: 40px; height: 40px; border-radius: 50%; cursor: pointer; font-size: 18px; }
-
-        /* ВХОД */
-        #loginBtn { background: #4285f4; color: white; border: none; padding: 15px; border-radius: 10px; width: 100%; max-width: 500px; cursor: pointer; font-weight: bold; }
+        /* Стили как на твоем макете */
+        body { font-family: sans-serif; background: #f0f2f5; display: flex; flex-direction: column; align-items: center; padding: 20px; }
+        .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); width: 100%; max-width: 500px; margin-bottom: 20px; }
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px; }
+        button { border: none; padding: 10px; border-radius: 8px; color: white; cursor: pointer; font-weight: bold; display: flex; align-items: center; justify-content: center; gap: 5px; transition: 0.2s; }
+        button:hover { opacity: 0.8; }
+        .btn-study { background: #28a745; }
+        .btn-coffee { background: #ffc107; color: #000; }
+        .btn-game { background: #17a2b8; }
+        .btn-home { background: #6c757d; }
+        .user-item { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid #eee; }
+        .status-dot { width: 12px; height: 12px; border-radius: 50%; }
     </style>
 </head>
 <body>
 
-    <button id="loginBtn">Войти через Google</button>
-
-    <div id="userInfo" class="auth-bar" style="display: none;">
-        <img id="userPhoto" class="user-avatar" src="">
-        <div style="flex-grow: 1;">
-            <div id="userName" style="font-weight: bold;"></div>
-            <button id="logoutBtn" class="logout-btn">Выйти</button>
+    <div class="card">
+        <h2>Мой профиль</h2>
+        <p id="myInfo">Загрузка...</p>
+        <div class="grid">
+            <button class="btn-study" onclick="changeStatus('📚 Учусь', '#28a745')">📚 Учусь</button>
+            <button class="btn-coffee" onclick="changeStatus('☕ Кофе', '#ffc107')">☕ Кофе</button>
+            <button class="btn-game" onclick="changeStatus('🎮 В игре', '#17a2b8')">🎮 В игре</button>
+            <button class="btn-home" onclick="changeStatus('🏠 Дома', '#6c757d')">🏠 Дома</button>
         </div>
     </div>
 
-    <div id="chatApp" class="chat-window" style="display: none;">
-        <div id="feed"></div>
-        <div class="input-area">
-            <input type="text" id="content" placeholder="Сообщение...">
-            <button id="mainBtn">➤</button>
-        </div>
+    <div class="card">
+        <h2>Монитор группы</h2>
+        <div id="groupList"></div>
     </div>
-
-    <input type="hidden" id="name">
-    <input type="hidden" id="email">
 
     <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js";
-        import { getFirestore, collection, addDoc, query, orderBy, onSnapshot, serverTimestamp, updateDoc, doc, increment } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js";
-        import { getAuth, signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-auth.js";
+        // Импорт библиотеки Supabase
+        import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm'
 
-        const firebaseConfig = {
-            apiKey: "AIzaSyAQAwIs7YCU-gb1aeOOxGF78Hnp84auIIg",
-            authDomain: "vladidmir-b24a1.firebaseapp.com",
-            projectId: "vladidmir-b24a1",
-            storageBucket: "vladidmir-b24a1.firebasestorage.app",
-            messagingSenderId: "833649325991",
-            appId: "1:833649325991:web:da1b66ec85543efc002882",
-            measurementId: "G-JXE3L7JHM2"
-        };
+        // ТВОИ ДАННЫЕ (уже подставлены из скриншотов)
+        const URL = 'https://rncerhgizyjhovbdpqnl.supabase.co';
+        const KEY = 'sb_publishable_ThtftS6uBeaKf8FyndIFtg_O0HMJ5yh';
+        const supabase = createClient(URL, KEY);
 
-        const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
-        const auth = getAuth(app);
-        const provider = new GoogleAuthProvider();
+        const MY_ID = '4bc5694e-89f8-47d9-9b60-2d3bd2439122';
 
-        // ЛАЙКИ
-        window.processLike = async (id) => {
-            try { await updateDoc(doc(db, "requests", id), { likes: increment(1) }); } 
-            catch (e) { console.error(e); }
-        };
+        // ФУНКЦИЯ 1: Обновление твоего статуса
+        window.changeStatus = async (text, color) => {
+            const { error } = await supabase
+                .from('profiles')
+                .update({ status: text, color: color }) // обновляем текст и цвет
+                .eq('id', MY_ID);
 
-        // АВТОРИЗАЦИЯ
-        onAuthStateChanged(auth, (user) => {
-            if (user) {
-                document.getElementById('loginBtn').style.display = 'none';
-                document.getElementById('userInfo').style.display = 'flex';
-                document.getElementById('chatApp').style.display = 'flex';
-                document.getElementById('userName').innerText = user.displayName;
-                document.getElementById('userPhoto').src = user.photoURL;
-                document.getElementById('name').value = user.displayName;
-                document.getElementById('email').value = user.email;
-                loadMessages();
+            if (error) {
+                alert("Ошибка! Проверьте RLS политики.");
+                console.error(error);
             } else {
-                document.getElementById('loginBtn').style.display = 'block';
-                document.getElementById('userInfo').style.display = 'none';
-                document.getElementById('chatApp').style.display = 'none';
+                fetchGroup(); // Сразу обновляем список после нажатия
             }
-        });
-
-        document.getElementById('loginBtn').onclick = () => signInWithPopup(auth, provider);
-        document.getElementById('logoutBtn').onclick = () => signOut(auth);
-
-        // ОТПРАВКА
-        document.getElementById('mainBtn').onclick = async () => {
-            const text = document.getElementById('content').value;
-            if (!text.trim()) return;
-            try {
-                await addDoc(collection(db, "requests"), {
-                    uid: auth.currentUser.uid,
-                    name: auth.currentUser.displayName,
-                    email: auth.currentUser.email,
-                    photo: auth.currentUser.photoURL,
-                    text: text,
-                    likes: 0,
-                    timestamp: serverTimestamp()
-                });
-                document.getElementById('content').value = "";
-            } catch (e) { alert("Ошибка записи!"); }
         };
 
-        // ЗАГРУЗКА
-        function loadMessages() {
-            const q = query(collection(db, "requests"), orderBy("timestamp", "asc"));
-            onSnapshot(q, (snapshot) => {
-                const feed = document.getElementById('feed');
-                feed.innerHTML = "";
-                snapshot.forEach((d) => {
-                    const data = d.data();
-                    const isMy = data.uid === auth.currentUser?.uid;
-                    const time = data.timestamp?.toDate().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) || '...';
-                    
-                    feed.innerHTML += `
-                        <div class="post ${isMy ? 'my-post' : 'their-post'}">
-                            <div class="post-info">
-                                <span>${isMy ? 'Вы' : data.name}</span>
-                                <span>${time}</span>
-                            </div>
-                            <div>${data.text}</div>
-                            <button class="like-btn" onclick="processLike('${d.id}')">👍 ${data.likes || 0}</button>
-                        </div>
-                    `;
-                });
-                feed.scrollTop = feed.scrollHeight;
-            });
+        // ФУНКЦИЯ 2: Получение списка всех пользователей
+        async function fetchGroup() {
+            const { data, error } = await supabase
+                .from('profiles')
+                .select('*')
+                .order('username', { ascending: true });
+
+            if (error) return console.error(error);
+
+            // Отображение списка группы
+            const list = document.getElementById('groupList');
+            list.innerHTML = data.map(user => `
+                <div class="user-item">
+                    <div class="status-dot" style="background: ${user.color || '#ccc'}"></div>
+                    <div style="flex-grow: 1;">
+                        <strong>${user.username}</strong><br>
+                        <small style="color: #666;">${user.status || 'Нет статуса'}</small>
+                    </div>
+                </div>
+            `).join('');
+
+            // Приветствие сверху
+            const me = data.find(u => u.id === MY_ID);
+            if (me) document.getElementById('myInfo').innerText = `Вы зашли как: ${me.username}`;
         }
+
+        // Запуск при загрузке
+        fetchGroup();
+
+        // Обновление данных каждые 5 секунд (Realtime эффект)
+        setInterval(fetchGroup, 5000);
     </script>
 </body>
 </html>
