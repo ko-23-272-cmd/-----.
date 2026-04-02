@@ -17,7 +17,8 @@
         .btn-home { background: #6c757d; }
         .user-item { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid #eee; }
         .status-dot { width: 12px; height: 12px; border-radius: 50%; }
-        #myInfo { font-weight: bold; color: #333; margin-bottom: 10px; }
+        #myInfo { font-weight: bold; color: #333; margin-bottom: 10px; text-align: center; }
+        .avatar { width: 32px; height: 32px; border-radius: 50%; object-fit: cover; }
     </style>
 </head>
 <body>
@@ -50,14 +51,16 @@
         const KEY = 'sb_publishable_LIC1tZk2AbwL-aWExuotWw_OT52pl5S';
         const supabase = createClient(URL, KEY);
 
-        // Глобальная переменная для ID текущего пользователя
+        // ТВОЯ ССЫЛКА НА GITHUB (ВАЖНО!)
+        const REDIRECT_URL = 'https://ko-23-272-cmd.github.io/-----./';
+
         let MY_ID = null;
 
         // 1. ЛОГИКА ВХОДА/ВЫХОДА
         document.getElementById('loginBtn').onclick = async () => {
             await supabase.auth.signInWithOAuth({
                 provider: 'google',
-                options: { redirectTo: window.location.origin }
+                options: { redirectTo: REDIRECT_URL }
             });
         };
 
@@ -74,9 +77,10 @@
                 MY_ID = user.id;
                 document.getElementById('loginBtn').style.display = 'none';
                 document.getElementById('logoutBtn').style.display = 'block';
-                document.getElementById('myInfo').innerText = `Вы зашли как: ${user.user_metadata.full_name || user.email}`;
                 
-                // Проверяем, есть ли пользователь в таблице profiles, если нет - можно создать (для диплома лучше добавить вручную или через триггер)
+                const name = user.user_metadata.full_name || user.email;
+                document.getElementById('myInfo').innerHTML = `Вы зашли как: <br> ${name}`;
+                
                 fetchGroup(); 
             }
         }
@@ -92,7 +96,7 @@
 
             if (error) {
                 console.error(error);
-                alert("Ошибка обновления! Убедитесь, что ваш ID есть в таблице profiles.");
+                alert("Ваш аккаунт еще не добавлен в таблицу profiles. Обратитесь к администратору (или добавьте свой ID вручную в БД).");
             } else {
                 fetchGroup();
             }
@@ -112,17 +116,16 @@
                 <div class="user-item">
                     <div class="status-dot" style="background: ${user.color || '#ccc'}"></div>
                     <div style="flex-grow: 1;">
-                        <strong>${user.username || 'Аноним'}</strong><br>
+                        <strong>${user.username || 'Без имени'}</strong><br>
                         <small style="color: #666;">${user.status || 'Нет статуса'}</small>
                     </div>
                 </div>
             `).join('');
         }
 
-        // Запуск при загрузке
         checkUser();
         fetchGroup();
-        setInterval(fetchGroup, 5000); // Обновление каждые 5 сек
+        setInterval(fetchGroup, 5000); 
     </script>
 </body>
 </html>
