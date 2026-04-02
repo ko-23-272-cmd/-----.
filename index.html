@@ -2,172 +2,183 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <title>Монитор статусов — PRO</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Монитор статусов PRO</title>
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f0f2f5; display: flex; flex-direction: column; align-items: center; padding: 20px; color: #333; }
-        .card { background: white; padding: 25px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); width: 100%; max-width: 400px; margin-bottom: 20px; text-align: center; border: 1px solid #eee; }
+        :root { --primary: #4285F4; --success: #34a853; --warning: #fbbc05; --danger: #ea4335; --gray: #5f6368; }
+        body { font-family: 'Segoe UI', Roboto, sans-serif; background: #f8f9fa; display: flex; flex-direction: column; align-items: center; padding: 20px; margin: 0; }
         
-        /* Таймер и кнопки */
-        .timer { font-size: 32px; font-weight: bold; color: #4285F4; margin: 15px 0; display: flex; align-items: center; justify-content: center; gap: 10px; }
-        .btn-stop { background: #ea4335; width: 100%; margin-bottom: 15px; box-shadow: 0 4px 10px rgba(234, 67, 53, 0.3); }
-        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .card { background: white; padding: 24px; border-radius: 24px; box-shadow: 0 8px 30px rgba(0,0,0,0.05); width: 100%; max-width: 400px; margin-bottom: 20px; text-align: center; border: 1px solid #ffffff; }
         
-        /* Чат */
-        .chat-box { height: 180px; border: 1px solid #f0f0f0; border-radius: 12px; overflow-y: auto; text-align: left; padding: 12px; margin: 15px 0; background: #fcfcfc; font-size: 14px; line-height: 1.5; }
-        .chat-input-row { display: flex; gap: 8px; }
-        input { flex-grow: 1; padding: 10px 15px; border: 1px solid #ddd; border-radius: 10px; outline: none; transition: 0.3s; }
-        input:focus { border-color: #4285F4; }
-        .btn-send { width: 50px; background: #34a853; font-size: 18px; }
-
-        button { border: none; padding: 12px; border-radius: 12px; color: white; cursor: pointer; font-weight: bold; transition: 0.3s; display: flex; align-items: center; justify-content: center; gap: 8px; }
-        button:hover { opacity: 0.9; transform: translateY(-1px); }
+        h2, h3, h4 { margin: 0 0 15px 0; color: #202124; }
+        
+        /* Таймер */
+        .timer-display { font-size: 36px; font-weight: bold; color: var(--primary); margin: 15px 0; display: flex; align-items: center; justify-content: center; gap: 10px; }
+        
+        /* Кнопки */
+        button { border: none; padding: 14px; border-radius: 14px; color: white; cursor: pointer; font-weight: 600; transition: all 0.2s ease; font-size: 15px; width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px; }
+        button:hover { filter: brightness(0.9); transform: translateY(-1px); }
         button:active { transform: translateY(0); }
         
-        .btn-google { background: #4285F4; width: 100%; font-size: 16px; }
-        .btn-status { background: #fbbc05; color: #000; }
-        .btn-exit { background: #5f6368; }
+        .btn-google { background: var(--primary); }
+        .btn-stop { background: var(--danger); margin-bottom: 12px; }
+        .btn-status { background: var(--warning); color: #000; }
+        .btn-exit { background: var(--gray); }
+        .btn-send { background: var(--success); width: 50px; padding: 10px; }
+
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+        /* Списки и чат */
+        .chat-box { height: 180px; border: 1px solid #f1f3f4; border-radius: 16px; overflow-y: auto; text-align: left; padding: 15px; margin: 15px 0; background: #fcfcfc; font-size: 14px; }
+        .input-group { display: flex; gap: 8px; }
+        input { flex: 1; padding: 12px; border: 1px solid #dadce0; border-radius: 12px; outline: none; }
         
-        .user-item { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid #f9f9f9; text-align: left; }
-        .status-dot { width: 10px; height: 10px; border-radius: 50%; }
-        h3, h4 { margin-top: 0; color: #202124; }
-        #uNameDisplay { margin-bottom: 10px; font-size: 18px; }
+        .user-item { display: flex; align-items: center; gap: 12px; padding: 12px 0; border-bottom: 1px solid #f1f3f4; text-align: left; }
+        .dot { width: 10px; height: 10px; border-radius: 50%; background: #ccc; }
+        
+        #loginSection { display: block; }
+        #appSection { display: none; }
     </style>
 </head>
 <body>
 
     <div class="card">
-        <h3 id="uNameDisplay">Вход в систему</h3>
-        <button id="loginBtn" class="btn-google">🔵 Войти через Google</button>
+        <h3 id="welcomeText">Монитор сессии</h3>
         
-        <div id="mainUI" style="display: none;">
-            <div class="timer">⏱️ <span id="timerSec">0</span> сек.</div>
+        <div id="loginSection">
+            <button class="btn-google" id="loginBtn">🔵 Войти через Google</button>
+        </div>
+
+        <div id="appSection">
+            <div class="timer-display">⏱️ <span id="seconds">0</span> сек.</div>
             <button class="btn-stop" onclick="location.reload()">⛔ Завершить сессию</button>
             <div class="grid">
-                <button class="btn-status" onclick="changeStatus('☕ Перерыв', '#fbbc05')">☕ Перерыв</button>
-                <button class="btn-exit" onclick="logout()">Выход</button>
+                <button class="btn-status" onclick="updateStatus('☕ Перерыв', '#fbbc05')">☕ Перерыв</button>
+                <button class="btn-exit" onclick="handleLogout()">Выход</button>
             </div>
         </div>
     </div>
 
     <div class="card">
         <h4>🎥 Монитор группы</h4>
-        <div id="gList"></div>
+        <div id="userList">Загрузка...</div>
     </div>
 
     <div class="card">
         <h4>💬 Общий чат</h4>
-        <div class="chat-box" id="cBox"></div>
-        <div class="chat-input-row">
-            <input type="text" id="mInp" placeholder="Напишите что-нибудь...">
-            <button class="btn-send" onclick="sendM()">➤</button>
+        <div class="chat-box" id="chatMessages"></div>
+        <div class="input-group">
+            <input type="text" id="msgInput" placeholder="Введите сообщение...">
+            <button class="btn-send" onclick="sendChatMessage()">➤</button>
         </div>
     </div>
 
     <script type="module">
         import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm'
 
-        // Настройки Supabase
-        const URL = 'https://mqegsznybpcwnzthvrqp.supabase.co';
-        const KEY = 'sb_publishable_LIC1tZk2AbwL-aWExuotWw_OT52pl5S';
-        const supabase = createClient(URL, KEY);
+        const SB_URL = 'https://mqegsznybpcwnzthvrqp.supabase.co';
+        const SB_KEY = 'sb_publishable_LIC1tZk2AbwL-aWExuotWw_OT52pl5S';
+        const supabase = createClient(SB_URL, SB_KEY);
 
-        // Твоя ссылка на GitHub
-        const REDIRECT = 'https://ko-23-272-cmd.github.io/-----./';
+        const REDIRECT_URL = 'https://ko-23-272-cmd.github.io/-----./';
 
-        let MY_ID = null;
-        let MY_NAME = "";
-        let seconds = 0;
+        let currentUser = null;
+        let timerCount = 0;
 
-        // 1. ЛОГИКА ВХОДА
+        // Авторизация
         document.getElementById('loginBtn').onclick = () => {
             supabase.auth.signInWithOAuth({ 
                 provider: 'google', 
-                options: { redirectTo: REDIRECT } 
+                options: { redirectTo: REDIRECT_URL } 
             });
         };
 
-        async function checkUser() {
+        async function initApp() {
             const { data: { user } } = await supabase.auth.getUser();
+            
             if (user) {
-                MY_ID = user.id;
-                MY_NAME = user.user_metadata.full_name || user.email;
+                currentUser = user;
+                document.getElementById('loginSection').style.display = 'none';
+                document.getElementById('appSection').style.display = 'block';
+                document.getElementById('welcomeText').innerText = user.user_metadata.full_name || user.email;
                 
-                document.getElementById('loginBtn').style.display = 'none';
-                document.getElementById('mainUI').style.display = 'block';
-                document.getElementById('uNameDisplay').innerText = MY_NAME;
-                
-                // Запуск таймера
+                // Таймер
                 setInterval(() => {
-                    seconds++;
-                    document.getElementById('timerSec').innerText = seconds;
+                    timerCount++;
+                    document.getElementById('seconds').innerText = timerCount;
                 }, 1000);
 
-                loadChat();
-                loadGroup();
+                refreshData();
+                setInterval(refreshData, 5000);
             }
         }
 
-        // 2. СТАТУСЫ
-        window.changeStatus = async (text, color) => {
-            if (!MY_ID) return;
-            await supabase.from('profiles').update({ status: text, color: color }).eq('id', MY_ID);
-            loadGroup();
+        // Выход
+        window.handleLogout = async () => {
+            await supabase.auth.signOut();
+            localStorage.clear();
+            window.location.href = REDIRECT_URL;
         };
 
-        // 3. ЧАТ
-        window.sendM = async () => {
-            const input = document.getElementById('mInp');
-            if (!input.value || !MY_NAME) return;
+        // Статус
+        window.updateStatus = async (statusText, color) => {
+            if (!currentUser) return;
+            const { error } = await supabase
+                .from('profiles')
+                .update({ status: statusText, color: color })
+                .eq('id', currentUser.id);
+            
+            if (error) console.error("Ошибка обновления:", error);
+            refreshData();
+        };
 
-            const { error } = await supabase.from('messages').insert([
-                { user_name: MY_NAME, text: input.value }
-            ]);
+        // Чат
+        window.sendChatMessage = async () => {
+            const inp = document.getElementById('msgInput');
+            if (!inp.value || !currentUser) return;
+
+            const name = currentUser.user_metadata.full_name || currentUser.email;
+            const { error } = await supabase
+                .from('messages')
+                .insert([{ user_name: name, text: inp.value }]);
 
             if (error) console.error("Ошибка чата:", error);
-            input.value = "";
-            loadChat();
+            inp.value = "";
+            fetchChat();
         };
 
-        async function loadChat() {
-            const { data } = await supabase
-                .from('messages')
-                .select('*')
-                .order('created_at', { ascending: false })
-                .limit(15);
-
+        async function fetchChat() {
+            const { data } = await supabase.from('messages').select('*').order('created_at', { ascending: false }).limit(20);
             if (data) {
-                document.getElementById('cBox').innerHTML = data.reverse().map(m => 
+                document.getElementById('chatMessages').innerHTML = data.reverse().map(m => 
                     `<div><strong>${m.user_name}:</strong> ${m.text}</div>`
                 ).join('');
-                const box = document.getElementById('cBox');
-                box.scrollTop = box.scrollHeight;
+                const b = document.getElementById('chatMessages');
+                b.scrollTop = b.scrollHeight;
             }
         }
 
-        // 4. МОНИТОРИНГ ГРУППЫ
-        async function loadGroup() {
-            const { data } = await supabase.from('profiles').select('*').order('username');
-            if (data) {
-                document.getElementById('gList').innerHTML = data.map(u => `
+        async function refreshData() {
+            // Список группы
+            const { data: users } = await supabase.from('profiles').select('*').order('username');
+            if (users) {
+                document.getElementById('userList').innerHTML = users.map(u => `
                     <div class="user-item">
-                        <div class="status-dot" style="background: ${u.color || '#ccc'}"></div>
-                        <span><strong>${u.username || 'Аноним'}</strong> — <small>${u.status || 'В сети'}</small></span>
+                        <div class="dot" style="background: ${u.color || '#ccc'}"></div>
+                        <div>
+                            <strong>${u.username || 'Аноним'}</strong><br>
+                            <small style="color: #666;">${u.status || 'В сети'}</small>
+                        </div>
                     </div>
                 `).join('');
             }
+            fetchChat();
         }
 
-        window.logout = async () => {
-            await supabase.auth.signOut();
-            location.reload();
-        };
-
-        // Инициализация
-        checkUser();
-        setInterval(() => {
-            loadGroup();
-            loadChat();
-        }, 5000);
+        initApp();
+        // На случай если сессия не подтянулась сразу (для GitHub Pages)
+        setTimeout(initApp, 1000);
     </script>
 </body>
 </html>
+
