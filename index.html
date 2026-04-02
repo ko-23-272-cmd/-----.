@@ -2,27 +2,34 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <title>Монитор статусов</title>
+    <title>Монитор статусов — 1С Франчайзинг</title>
     <style>
-        /* Стили как на твоем макете */
         body { font-family: sans-serif; background: #f0f2f5; display: flex; flex-direction: column; align-items: center; padding: 20px; }
         .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); width: 100%; max-width: 500px; margin-bottom: 20px; }
         .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px; }
-        button { border: none; padding: 10px; border-radius: 8px; color: white; cursor: pointer; font-weight: bold; display: flex; align-items: center; justify-content: center; gap: 5px; transition: 0.2s; }
+        button { border: none; padding: 10px; border-radius: 8px; color: white; cursor: pointer; font-weight: bold; display: flex; align-items: center; justify-content: center; gap: 5px; transition: 0.2s; width: 100%; }
         button:hover { opacity: 0.8; }
+        .btn-google { background: #4285F4; margin-bottom: 10px; }
+        .btn-logout { background: #dc3545; margin-bottom: 10px; display: none; }
         .btn-study { background: #28a745; }
         .btn-coffee { background: #ffc107; color: #000; }
         .btn-game { background: #17a2b8; }
         .btn-home { background: #6c757d; }
         .user-item { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid #eee; }
         .status-dot { width: 12px; height: 12px; border-radius: 50%; }
+        #myInfo { font-weight: bold; color: #333; margin-bottom: 10px; }
     </style>
 </head>
 <body>
 
     <div class="card">
         <h2>Мой профиль</h2>
-        <p id="myInfo">Загрузка...</p>
+        
+        <button id="loginBtn" class="btn-google">🔵 Войти через Google</button>
+        <button id="logoutBtn" class="btn-logout">🔴 Выйти из аккаунта</button>
+        
+        <p id="myInfo">Пожалуйста, войдите в систему</p>
+        
         <div class="grid">
             <button class="btn-study" onclick="changeStatus('📚 Учусь', '#28a745')">📚 Учусь</button>
             <button class="btn-coffee" onclick="changeStatus('☕ Кофе', '#ffc107')">☕ Кофе</button>
@@ -37,32 +44,61 @@
     </div>
 
     <script type="module">
-        // Импорт библиотеки Supabase
         import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm'
 
-        // ТВОИ ДАННЫЕ (уже подставлены из скриншотов)
         const URL = 'https://mqegsznybpcwnzthvrqp.supabase.co';
         const KEY = 'sb_publishable_LIC1tZk2AbwL-aWExuotWw_OT52pl5S';
         const supabase = createClient(URL, KEY);
 
-        const MY_ID = '714c100c-d23f-4207-ad8d-a59506fa52b6';
+        // Глобальная переменная для ID текущего пользователя
+        let MY_ID = null;
 
-        // ФУНКЦИЯ 1: Обновление твоего статуса
+        // 1. ЛОГИКА ВХОДА/ВЫХОДА
+        document.getElementById('loginBtn').onclick = async () => {
+            await supabase.auth.signInWithOAuth({
+                provider: 'google',
+                options: { redirectTo: window.location.origin }
+            });
+        };
+
+        document.getElementById('logoutBtn').onclick = async () => {
+            await supabase.auth.signOut();
+            location.reload();
+        };
+
+        // 2. ПРОВЕРКА СЕССИИ
+        async function checkUser() {
+            const { data: { user } } = await supabase.auth.getUser();
+            
+            if (user) {
+                MY_ID = user.id;
+                document.getElementById('loginBtn').style.display = 'none';
+                document.getElementById('logoutBtn').style.display = 'block';
+                document.getElementById('myInfo').innerText = `Вы зашли как: ${user.user_metadata.full_name || user.email}`;
+                
+                // Проверяем, есть ли пользователь в таблице profiles, если нет - можно создать (для диплома лучше добавить вручную или через триггер)
+                fetchGroup(); 
+            }
+        }
+
+        // 3. ОБНОВЛЕНИЕ СТАТУСА
         window.changeStatus = async (text, color) => {
+            if (!MY_ID) return alert("Сначала войдите через Google!");
+
             const { error } = await supabase
                 .from('profiles')
-                .update({ status: text, color: color }) // обновляем текст и цвет
+                .update({ status: text, color: color })
                 .eq('id', MY_ID);
 
             if (error) {
-                alert("Ошибка! Проверьте RLS политики.");
                 console.error(error);
+                alert("Ошибка обновления! Убедитесь, что ваш ID есть в таблице profiles.");
             } else {
-                fetchGroup(); // Сразу обновляем список после нажатия
+                fetchGroup();
             }
         };
 
-        // ФУНКЦИЯ 2: Получение списка всех пользователей
+        // 4. ПОЛУЧЕНИЕ СПИСКА ГРУППЫ
         async function fetchGroup() {
             const { data, error } = await supabase
                 .from('profiles')
@@ -71,30 +107,22 @@
 
             if (error) return console.error(error);
 
-            // Отображение списка группы
             const list = document.getElementById('groupList');
             list.innerHTML = data.map(user => `
                 <div class="user-item">
                     <div class="status-dot" style="background: ${user.color || '#ccc'}"></div>
                     <div style="flex-grow: 1;">
-                        <strong>${user.username}</strong><br>
+                        <strong>${user.username || 'Аноним'}</strong><br>
                         <small style="color: #666;">${user.status || 'Нет статуса'}</small>
                     </div>
                 </div>
             `).join('');
-
-            // Приветствие сверху
-            const me = data.find(u => u.id === MY_ID);
-            if (me) document.getElementById('myInfo').innerText = `Вы зашли как: ${me.username}`;
         }
 
         // Запуск при загрузке
+        checkUser();
         fetchGroup();
-
-        // Обновление данных каждые 5 секунд (Realtime эффект)
-        setInterval(fetchGroup, 5000);
+        setInterval(fetchGroup, 5000); // Обновление каждые 5 сек
     </script>
 </body>
 </html>
-
-
