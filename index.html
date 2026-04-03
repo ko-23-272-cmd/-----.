@@ -3,15 +3,15 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>KO-23: Ultimate System</title>
+  <title>KO-23: Статус и Квесты</title>
   <style>
     body { font-family: 'Segoe UI', sans-serif; background-color: #f0f2f5; display: flex; justify-content: center; padding: 20px; margin: 0; }
     .page-wrapper { display: flex; gap: 20px; max-width: 1100px; width: 100%; align-items: flex-start; }
     
-    /* Левая колонка */
+    /* Левая колонка (твой оригинальный вид) */
     .main-column { flex: 0 0 420px; display: flex; flex-direction: column; gap: 20px; }
     
-    /* Правая колонка */
+    /* Правая колонка (новые шкалы) */
     .quests-column { flex: 1; position: sticky; top: 20px; }
 
     .card { background: white; padding: 20px; border-radius: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
@@ -20,12 +20,12 @@
     .btn-exit { background: #e74c3c; color: white; border: none; padding: 10px; width: 100%; border-radius: 10px; cursor: pointer; font-weight: bold; margin-bottom: 10px; }
     
     .grid-buttons { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-    .grid-buttons button { border: none; padding: 15px; border-radius: 12px; color: white; font-weight: bold; cursor: pointer; font-size: 0.9em; }
+    .grid-buttons button { border: none; padding: 15px; border-radius: 12px; color: white; font-weight: bold; cursor: pointer; }
 
     .chat-box { height: 200px; overflow-y: auto; background: #f8f9fa; border-radius: 15px; padding: 15px; border: 1px solid #eee; font-size: 0.9em; }
     .user-item { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #f0f0f0; }
 
-    /* Шкалы прогресса */
+    /* Дизайн шкал прогресса */
     .quest-card { margin-bottom: 15px; padding: 15px; background: #fff; border-radius: 15px; border: 1px solid #eaeaea; }
     .progress-container { margin-top: 10px; }
     .progress-label { display: flex; justify-content: space-between; font-size: 0.75em; font-weight: bold; color: #666; margin-bottom: 4px; }
@@ -75,7 +75,7 @@
         </div>
     </div>
 
-    <div class="quests-column card">
+    <div class="quests-column card" id="questsPanel" style="display:none;">
         <h3 style="margin-top:0; color:#4e8cff;">🎯 Прогресс квестов</h3>
         <div id="questsDisplay"></div>
     </div>
@@ -87,73 +87,87 @@
     const KEY = 'sb_publishable_LIC1tZk2AbwL-aWExuotWw_OT52pl5S';
     const supabase = createClient(URL, KEY);
 
-    let user = null;
+    let currentUser = null;
     let secondsCounter = 0;
     let sessionTime = 0;
     let statusChanges = 0;
-    let sessionStatuses = new Set();
     let restTime = 0;
+    let sessionStatuses = new Set();
 
-    // ИСПРАВЛЕННЫЙ ВХОД
+    // ИСПРАВЛЕННАЯ АВТОРИЗАЦИЯ
     window.login = async () => {
-        const { error } = await supabase.auth.signInWithOAuth({ provider: 'google' });
-        if (error) console.error("Login error:", error.message);
+        await supabase.auth.signInWithOAuth({ provider: 'google' });
     };
 
-    window.logout = async () => { await supabase.auth.signOut(); location.reload(); };
+    window.logout = async () => { 
+        await supabase.auth.signOut(); 
+        location.reload(); 
+    };
 
     window.changeStatus = async (s, c) => {
         statusChanges++;
         sessionStatuses.add(s);
-        await supabase.from('profiles').upsert({ id: user.id, username: user.user_metadata.full_name, status: s, color: c });
-        sync();
+        await supabase.from('profiles').upsert({ 
+            id: currentUser.id, 
+            username: currentUser.user_metadata.full_name, 
+            status: s, 
+            color: c 
+        });
+        fetchData();
     };
 
     window.sendMessage = async () => {
         const input = document.getElementById('chatInput');
         if (!input.value.trim()) return;
-        await supabase.from('chat_messages').insert({ username: user.user_metadata.full_name, message: input.value });
-        const { data } = await supabase.from('profiles').select('message_count').eq('id', user.id).single();
-        await supabase.from('profiles').update({ message_count: (data?.message_count || 0) + 1 }).eq('id', user.id);
+        await supabase.from('chat_messages').insert({ 
+            username: currentUser.user_metadata.full_name, 
+            message: input.value 
+        });
+        
+        // Обновляем message_count для квеста "Оратор"
+        const { data } = await supabase.from('profiles').select('message_count').eq('id', currentUser.id).single();
+        await supabase.from('profiles').update({ message_count: (data?.message_count || 0) + 1 }).eq('id', currentUser.id);
+        
         input.value = '';
         fetchMessages();
     };
 
-    async function sync() {
-        if (!user) return;
-        const { data: p } = await supabase.from('profiles').select('*').eq('id', user.id).single();
-        const msgCount = p?.message_count || 0;
-        let badges = p?.badges || [];
-        let time = (p?.study_time || 0) + 10;
-        if (p?.status?.includes('Отдых') || p?.status?.includes('Кофе')) restTime += 10;
-
+    // ФУНКЦИЯ ПРОВЕРКИ ВСЕХ 15 ДОСТИЖЕНИЙ
+    async function checkAchievements(p) {
+        let badges = p.badges || [];
+        let time = p.study_time || 0;
+        let msgs = p.message_count || 0;
         const h = new Date().getHours();
-        const check = (icon, cond) => { if (cond && !badges.includes(icon)) badges.push(icon); };
+        const startBadgesCount = badges.length;
 
-        // ВСЕ 15 ДОСТИЖЕНИЙ
-        check('🌅', h >= 5 && h < 8); check('🦉', h >= 0 && h < 4);
-        check('📢', msgCount >= 20); check('🏃', sessionTime >= 7200);
-        check('💎', time >= 36000); check('🔥', sessionTime >= 1800);
-        check('💬', msgCount >= 50); check('⚡', time >= 900);
-        check('🕵️', statusChanges >= 5); check('🎯', time >= 18000);
-        check('📣', msgCount >= 100); check('🧘', restTime >= 600);
-        check('🛠️', sessionStatuses.size >= 3); 
-        
+        const add = (emoji, cond) => { if (cond && !badges.includes(emoji)) badges.push(emoji); };
+
+        add('🌅', h >= 5 && h < 8); add('🦉', h >= 0 && h < 4);
+        add('📢', msgs >= 20); add('🏃', sessionTime >= 7200);
+        add('💎', time >= 36000); add('🔥', sessionTime >= 1800);
+        add('💬', msgs >= 50); add('⚡', time >= 900);
+        add('🕵️', statusChanges >= 5); add('🎯', time >= 18000);
+        add('📣', msgs >= 100); add('🧘', restTime >= 600);
+        add('🛠️', sessionStatuses.size >= 3);
+
         const { data: all } = await supabase.from('profiles').select('*').order('study_time', { ascending: false });
         if (all) {
-            if (all[0].id === user.id) check('👑', true);
-            if (badges.length >= 10) check('🏆', true);
-            await supabase.from('profiles').update({ study_time: time, badges: badges }).eq('id', user.id);
-            renderAll(all);
+            if (all[0].id === currentUser.id) add('👑', true);
+            if (badges.length >= 10) add('🏆', true);
+            
+            if (badges.length !== startBadgesCount) {
+                await supabase.from('profiles').update({ badges: badges }).eq('id', currentUser.id);
+            }
+            render(all);
         }
     }
 
-    function renderAll(users) {
+    function render(users) {
         // Группа сейчас
         document.getElementById('grouplist').innerHTML = users.map(u => `
             <div class="user-item">
                 <span><span style="color:${u.color || '#44ad62'}">●</span> <b>${u.username}</b> ${(u.badges || []).join('')}</span>
-                <span style="font-size:0.8em; color:#888;">${u.status || 'Онлайн'}</span>
+                <span style="font-size:0.8em; color:#888;">${u.status || 'В сети'}</span>
             </div>`).join('');
 
         // Топ студентов
@@ -182,6 +196,15 @@
         }).join('');
     }
 
+    async function fetchData() {
+        if (!currentUser) return;
+        const { data: p } = await supabase.from('profiles').select('*').eq('id', currentUser.id).single();
+        if (p) {
+            if (p.status?.includes('Отдых') || p.status?.includes('Кофе')) restTime += 10;
+            checkAchievements(p);
+        }
+    }
+
     async function fetchMessages() {
         const { data } = await supabase.from('chat_messages').select('*').order('created_at', { ascending: false }).limit(20);
         if (data) document.getElementById('chatMessages').innerHTML = data.reverse().map(m => `
@@ -192,16 +215,25 @@
     async function init() {
         const { data: { session } } = await supabase.auth.getSession();
         if (session) {
-            user = session.user;
+            currentUser = session.user;
             document.getElementById('personalStatus').style.display = 'block';
-            document.getElementById('myGreeting').innerText = "Вы: " + user.user_metadata.full_name;
-            setInterval(() => { 
-                secondsCounter++; sessionTime++; 
+            document.getElementById('questsPanel').style.display = 'block';
+            document.getElementById('myGreeting').innerText = "Вы: " + currentUser.user_metadata.full_name;
+            
+            // Твой оригинальный таймер
+            setInterval(async () => {
+                secondsCounter++;
+                sessionTime++;
                 document.getElementById('timer').innerText = secondsCounter + " сек.";
-                if (secondsCounter % 10 === 0) sync(); 
+                if (secondsCounter % 10 === 0) {
+                    const { data } = await supabase.from('profiles').select('study_time').eq('id', currentUser.id).single();
+                    await supabase.from('profiles').update({ study_time: (data?.study_time || 0) + 10 }).eq('id', currentUser.id);
+                    fetchData();
+                }
             }, 1000);
+
             setInterval(fetchMessages, 3000);
-            sync(); fetchMessages();
+            fetchData(); fetchMessages();
         } else {
             document.getElementById('authSection').style.display = 'block';
         }
