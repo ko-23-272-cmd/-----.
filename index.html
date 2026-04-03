@@ -2,103 +2,110 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8">
-  <title>Монитор статусов</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Монитор Студентов KO-23</title>
   <style>
-    body { font-family: sans-serif; background: #eef2f5; display: flex; justify-content: center; padding: 20px; margin: 0; }
+    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f0f2f5; display: flex; justify-content: center; padding: 20px; margin: 0; color: #333; }
     .main-column { display: flex; flex-direction: column; gap: 20px; width: 100%; max-width: 500px; }
-    .card { background: white; padding: 25px; border-radius: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+    .card { background: white; padding: 20px; border-radius: 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
     
-    /* Персональный блок */
-    .personal-card { text-align: center; }
-    .user-greeting { font-weight: bold; font-size: 18px; margin-bottom: 15px; display: block; }
-    .timer-display { font-size: 32px; font-weight: bold; color: #4285F4; margin: 20px 0; display: flex; align-items: center; justify-content: center; gap: 10px; }
+    /* Личный кабинет */
+    .user-greeting { font-weight: bold; font-size: 1.1em; display: block; text-align: center; margin-bottom: 15px; }
+    .timer-display { font-size: 2.5em; font-weight: bold; color: #4285F4; text-align: center; margin: 15px 0; }
     
-    .btn-logout { background: #dc3545; color: white; width: 100%; padding: 14px; border: none; border-radius: 12px; font-weight: bold; cursor: pointer; margin-bottom: 15px; }
-    .grid-buttons { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-    .grid-buttons button { padding: 14px; border: none; border-radius: 12px; font-weight: bold; cursor: pointer; color: white; display: flex; align-items: center; justify-content: center; gap: 8px; }
+    .grid-buttons { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px; }
+    .grid-buttons button { padding: 12px; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; color: white; transition: 0.2s; display: flex; align-items: center; justify-content: center; gap: 8px; }
+    .grid-buttons button:active { transform: scale(0.95); }
     
     .btn-study { background: #28a745; }
-    .btn-coffee { background: #ffc107; color: black !important; }
+    .btn-coffee { background: #ffc107; color: #333 !important; }
     .btn-game { background: #17a2b8; }
     .btn-home { background: #6c757d; }
+    .btn-logout { background: #dc3545; color: white; width: 100%; padding: 10px; border: none; border-radius: 10px; margin-bottom: 10px; cursor: pointer; }
 
-    /* Списки */
-    .section-header { font-weight: bold; margin-bottom: 15px; display: flex; align-items: center; gap: 10px; font-size: 18px; }
+    /* Списки и элементы */
+    .section-header { font-weight: bold; margin-bottom: 15px; display: flex; align-items: center; gap: 10px; font-size: 1.1em; border-bottom: 2px solid #f0f2f5; padding-bottom: 5px; }
     .user-item { display: flex; align-items: center; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #eee; }
-    .status-dot { width: 10px; height: 10px; border-radius: 50%; background: #ccc; }
-    
+    .status-dot { width: 12px; height: 12px; border-radius: 50%; border: 2px solid white; box-shadow: 0 0 4px rgba(0,0,0,0.2); }
+    .badges-span { margin-left: 5px; letter-spacing: 2px; }
+
     /* Чат */
-    .chat-messages { height: 200px; overflow-y: auto; background: #f9f9f9; border-radius: 10px; padding: 10px; margin-bottom: 10px; font-size: 14px; border: 1px solid #eee; }
-    .chat-input-group { display: flex; gap: 5px; }
-    .chat-input { flex-grow: 1; padding: 10px; border: 1px solid #ddd; border-radius: 10px; outline: none; }
-    .btn-send { background: #28a745; color: white; border: none; border-radius: 10px; width: 40px; cursor: pointer; }
+    .chat-messages { height: 180px; overflow-y: auto; background: #f8f9fa; border-radius: 10px; padding: 10px; margin-bottom: 10px; font-size: 0.9em; border: 1px solid #eee; }
+    .chat-msg { margin-bottom: 6px; line-height: 1.4; }
+    .chat-msg b { color: #4285F4; }
+    .chat-input-group { display: flex; gap: 8px; }
+    .chat-input { flex-grow: 1; padding: 10px; border: 1px solid #ddd; border-radius: 8px; outline: none; }
+    .btn-send { background: #28a745; color: white; border: none; border-radius: 8px; padding: 0 15px; cursor: pointer; }
 
     /* Рейтинг */
-    .top-item { display: flex; justify-content: space-between; padding: 8px 0; font-size: 14px; border-bottom: 1px dashed #eee; }
-    .top-name { font-weight: bold; }
+    .top-item { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px dashed #eee; font-size: 0.95em; }
     
-    #authSection { display: none; text-align: center; }
-    .btn-login { background: #4285F4; color: white; padding: 15px; border-radius: 12px; width: 100%; border: none; font-weight: bold; cursor: pointer; }
+    #authSection { text-align: center; }
+    .btn-login { background: #4285F4; color: white; padding: 15px; border-radius: 10px; width: 100%; border: none; font-weight: bold; cursor: pointer; font-size: 1em; }
   </style>
 </head>
 <body>
 
   <div class="main-column">
-    <div id="authSection" class="card">
-      <h2>С возвращением!</h2>
+    <div id="authSection" class="card" style="display: none;">
+      <h2>👨‍🎓 KO-23 Статус</h2>
       <button class="btn-login" onclick="login()">🌐 Войти через Google</button>
     </div>
 
-    <div id="personalStatus" class="card personal-card" style="display: none;">
-      <span class="user-greeting" id="myGreeting">Загрузка профиля...</span>
+    <div id="personalStatus" class="card" style="display: none;">
+      <span class="user-greeting" id="myGreeting">Загрузка...</span>
       <div class="timer-display">⏱️ <span id="timer">0 сек.</span></div>
-      
-      <button class="btn-logout" onclick="logout()">Выйти из системы</button>
-      
+      <button class="btn-logout" onclick="logout()">Выйти</button>
       <div class="grid-buttons">
         <button class="btn-study" onclick="changeStatus('Учусь', '#28a745')">📖 Учусь</button>
-        <button class="btn-coffee" onclick="changeStatus('На перерыве', '#ffc107')">🍵 Кофе</button>
-        <button class="btn-game" onclick="changeStatus('Играю', '#17a2b8')">🕹️ В игре</button>
-        <button class="btn-home" onclick="changeStatus('Отдыхаю', '#6c757d')">💤 Дома</button>
+        <button class="btn-coffee" onclick="changeStatus('Перерыв', '#ffc107')">🍵 Кофе</button>
+        <button class="btn-game" onclick="changeStatus('В игре', '#17a2b8')">🕹️ В игре</button>
+        <button class="btn-home" onclick="changeStatus('Дома', '#6c757d')">💤 Дома</button>
       </div>
     </div>
 
     <div class="card">
-      <div class="section-header">👥 Монитор группы</div>
-      <div id="grouplist">Список пуст</div>
+      <div class="section-header">👥 Сейчас онлайн</div>
+      <div id="grouplist">Поиск студентов...</div>
     </div>
 
     <div class="card">
       <div class="section-header">💬 Общий чат</div>
       <div id="chatMessages" class="chat-messages"></div>
       <div class="chat-input-group">
-        <input type="text" id="chatInput" class="chat-input" placeholder="Введите сообщение...">
+        <input type="text" id="chatInput" class="chat-input" placeholder="Написать сообщение...">
         <button class="btn-send" onclick="sendMessage()">➤</button>
       </div>
     </div>
 
     <div class="card">
-      <div class="section-header">🏆 Топ студентов</div>
-      <div id="topList">Рейтинг загружается...</div>
+      <div class="section-header">🏆 Топ по учебе</div>
+      <div id="topList">Загрузка рейтинга...</div>
     </div>
   </div>
 
   <script type="module">
     import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm'
 
-    // Твои настройки подключения
     const URL = 'https://mqegsznybpcwnzthvrqp.supabase.co';
     const KEY = 'sb_publishable_LIC1tZk2AbwL-aWExuotWw_OT52pl5S';
     const supabase = createClient(URL, KEY);
 
     let currentUser = null;
-    let timerValue = 0;
+    let secondsCounter = 0;
 
-    // Авторизация
+    // Достижения
+    const ACHIEVEMENTS = [
+      { id: '1min', name: 'Новичок', icon: '🥉', threshold: 60 },
+      { id: '5min', name: 'Усердный', icon: '🥈', threshold: 300 },
+      { id: '30min', name: 'Мастер', icon: '🥇', threshold: 1800 },
+      { id: '1hr', name: 'Легенда', icon: '🔥', threshold: 3600 }
+    ];
+
     window.login = async () => {
       await supabase.auth.signInWithOAuth({ 
         provider: 'google', 
-        options: { redirectTo: 'https://ko-23-272-cmd.github.io/-----./' } 
+        options: { redirectTo: window.location.href } 
       });
     };
 
@@ -107,107 +114,102 @@
       location.reload();
     };
 
-    // Статусы
     window.changeStatus = async (text, color) => {
       if (!currentUser) return;
-      const { error } = await supabase.from('profiles').upsert({
+      await supabase.from('profiles').upsert({
         id: currentUser.id,
         username: currentUser.user_metadata.full_name,
         status: text,
         color: color,
         last_seen: new Date().toISOString()
       });
-      if (error) console.error("Ошибка обновления статуса:", error);
-      updateUI();
+      fetchData();
     };
 
-    // Работа с чатом (таблица chat_messages)
     window.sendMessage = async () => {
       const input = document.getElementById('chatInput');
-      if (!input.value || !currentUser) return;
-
-      const { error } = await supabase.from('chat_messages').insert({
+      if (!input.value.trim() || !currentUser) return;
+      await supabase.from('chat_messages').insert({
         username: currentUser.user_metadata.full_name,
         message: input.value
       });
-      
-      if (error) {
-        console.error("Ошибка отправки сообщения:", error);
-      } else {
-        input.value = '';
-        refreshChat();
-      }
+      input.value = '';
+      fetchMessages();
     };
 
-    async function refreshChat() {
-      const { data, error } = await supabase.from('chat_messages').select('*').order('created_at', { ascending: false }).limit(30);
+    async function fetchMessages() {
+      const { data } = await supabase.from('chat_messages').select('*').order('created_at', { ascending: false }).limit(20);
       if (data) {
-        const chatHtml = data.reverse().map(m => `<div><strong>${m.username}:</strong> ${m.message}</div>`).join('');
-        const chatBox = document.getElementById('chatMessages');
-        chatBox.innerHTML = chatHtml;
-        chatBox.scrollTop = chatBox.scrollHeight;
+        document.getElementById('chatMessages').innerHTML = data.reverse().map(m => 
+          `<div class="chat-msg"><b>${m.username}:</b> ${m.message}</div>`
+        ).join('');
+        const box = document.getElementById('chatMessages');
+        box.scrollTop = box.scrollHeight;
       }
     }
 
-    // Обновление данных группы и рейтинга (таблица profiles)
-    async function updateUI() {
+    async function fetchData() {
+      // Обновление времени и проверка ачивок
       if (currentUser) {
-        const { data: profile } = await supabase.from('profiles').select('study_time').eq('id', currentUser.id).single();
-        const newTime = (profile?.study_time || 0) + 10;
-        await supabase.from('profiles').update({ study_time: newTime, last_seen: new Date().toISOString() }).eq('id', currentUser.id);
+        const { data: profile } = await supabase.from('profiles').select('study_time, badges').eq('id', currentUser.id).single();
+        let newTime = (profile?.study_time || 0) + 10;
+        let badges = profile?.badges || [];
+
+        ACHIEVEMENTS.forEach(ach => {
+          if (newTime >= ach.threshold && !badges.includes(ach.icon)) {
+            badges.push(ach.icon);
+          }
+        });
+
+        await supabase.from('profiles').update({ 
+          study_time: newTime, 
+          badges: badges,
+          last_seen: new Date().toISOString() 
+        }).eq('id', currentUser.id);
       }
 
-      const { data: users, error } = await supabase.from('profiles').select('*').order('study_time', { ascending: false });
+      const { data: users } = await supabase.from('profiles').select('*').order('study_time', { ascending: false });
       
       if (users) {
-        // Монитор
+        // Рендер группы
         document.getElementById('grouplist').innerHTML = users.map(u => `
           <div class="user-item">
             <div style="display:flex; align-items:center; gap:10px;">
               <div class="status-dot" style="background:${u.color || '#ccc'}"></div>
-              <strong>${u.username}</strong>
+              <span><strong>${u.username}</strong><span class="badges-span">${(u.badges || []).join('')}</span></span>
             </div>
             <small>${u.status || 'В сети'}</small>
           </div>
         `).join('');
 
-        // Рейтинг (Топ-5)
-        document.getElementById('topList').innerHTML = users.slice(0, 5).map((u, index) => `
+        // Рендер топа
+        document.getElementById('topList').innerHTML = users.slice(0, 5).map((u, i) => `
           <div class="top-item">
-            <span>${index + 1}. <span class="top-name">${u.username}</span></span>
-            <span>${Math.round((u.study_time || 0) / 60)} мин.</span>
+            <span>${i+1}. ${u.username} ${(u.badges || []).join('')}</span>
+            <span>${Math.round((u.study_time || 0)/60)} мин</span>
           </div>
         `).join('');
       }
     }
 
-    async function startApp() {
+    async function init() {
       const { data: { session } } = await supabase.auth.getSession();
-      
       if (session) {
         currentUser = session.user;
         document.getElementById('personalStatus').style.display = 'block';
-        document.getElementById('myGreeting').innerText = "Привет, " + currentUser.user_metadata.full_name;
+        document.getElementById('myGreeting').innerText = "Вы: " + currentUser.user_metadata.full_name;
         
-        // Таймер для визуала
-        setInterval(() => { 
-          timerValue++; 
-          document.getElementById('timer').innerText = timerValue + " сек."; 
-        }, 1000);
-
-        // Обновление базы раз в 10 сек
-        setInterval(updateUI, 10000);
-        // Обновление чата раз в 3 сек
-        setInterval(refreshChat, 3000);
-
-        updateUI();
-        refreshChat();
+        setInterval(() => { secondsCounter++; document.getElementById('timer').innerText = secondsCounter + " сек."; }, 1000);
+        setInterval(fetchData, 10000);
+        setInterval(fetchMessages, 3000);
+        fetchData();
+        fetchMessages();
       } else {
         document.getElementById('authSection').style.display = 'block';
       }
     }
 
-    startApp();
+    init();
   </script>
 </body>
 </html>
