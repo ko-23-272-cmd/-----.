@@ -5,21 +5,18 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Панель управления</title>
     <style>
-        body { background-color: #f5f7f8; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; display: flex; flex-direction: column; align-items: center; padding: 50px 20px; margin: 0; }
+        body { background-color: #f5f7f8; font-family: sans-serif; display: flex; flex-direction: column; align-items: center; padding: 50px 20px; margin: 0; }
         .card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); width: 100%; max-width: 400px; margin-bottom: 25px; }
-        h2 { margin-top: 0; font-size: 20px; color: #333; margin-bottom: 20px; }
-        input { width: 100%; padding: 12px; margin-bottom: 15px; border: 1px solid #e0e0e0; border-radius: 8px; box-sizing: border-box; font-size: 14px; outline: none; }
-        input:focus { border-color: #007bff; }
-        button { width: 100%; padding: 14px; background-color: #007bff; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 15px; transition: background 0.2s; }
-        button:hover { background-color: #0056b3; }
+        h2 { margin-top: 0; font-size: 18px; color: #333; margin-bottom: 20px; }
+        input { width: 100%; padding: 12px; margin-bottom: 15px; border: 1px solid #e0e0e0; border-radius: 8px; box-sizing: border-box; outline: none; }
+        button { width: 100%; padding: 14px; background-color: #007bff; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; }
         
         #dataContainer { width: 100%; max-width: 400px; }
-        .list-item { background: white; padding: 18px; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); margin-bottom: 12px; position: relative; border-left: 4px solid transparent; }
-        .name { font-weight: 700; font-size: 15px; color: #222; }
-        .email { color: #666; font-size: 14px; margin: 6px 0 10px 0; }
-        .time { position: absolute; top: 18px; right: 18px; font-size: 11px; color: #aaa; }
-        .likes { display: inline-flex; align-items: center; font-size: 13px; background: #fff5e6; padding: 4px 10px; border-radius: 6px; color: #d48806; cursor: pointer; font-weight: 600; border: 1px solid #ffe7ba; }
-        .likes:hover { background: #ffe7ba; }
+        .list-item { background: white; padding: 15px; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); margin-bottom: 10px; position: relative; }
+        .name { font-weight: bold; font-size: 14px; color: #222; }
+        .email { color: #666; font-size: 13px; margin: 5px 0; }
+        .time { position: absolute; top: 15px; right: 15px; font-size: 10px; color: #aaa; }
+        .likes { display: inline-block; font-size: 12px; background: #fff5e6; padding: 3px 8px; border-radius: 5px; color: #d48806; cursor: pointer; }
     </style>
 </head>
 <body>
@@ -37,45 +34,40 @@
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
   import { getFirestore, collection, addDoc, query, orderBy, onSnapshot, updateDoc, doc, increment } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-  // ТУТ ТВОИ ДАННЫЕ ИЗ FIREBASE
+  // Твои данные со скриншота:
   const firebaseConfig = {
-    apiKey: "ТВОЙ_API_KEY",
-    authDomain: "ТВОЙ_ID.firebaseapp.com",
-    projectId: "ТВОЙ_ID",
-    storageBucket: "ТВОЙ_ID.appspot.com",
-    messagingSenderId: "...",
-    appId: "..."
+    apiKey: "AIzaSyAQAwIs7YCU-gb1aeO0xGF78Hnp84auIIg",
+    authDomain: "vladidmir-b24a1.firebaseapp.com",
+    projectId: "vladidmir-b24a1",
+    storageBucket: "vladidmir-b24a1.firebasestorage.app",
+    messagingSenderId: "833649325991",
+    appId: "1:833649325991:web:da1b66ec85543efc002882",
+    measurementId: "G-JXE3L7JHM2"
   };
 
   const app = initializeApp(firebaseConfig);
   const db = getFirestore(app);
   const colRef = collection(db, "requests");
 
-  // Отправка данных
+  // Функция отправки
   window.sendData = async function() {
     const name = document.getElementById('nameInput').value;
     const email = document.getElementById('emailInput').value;
     
     if(name && email) {
-      try {
-        await addDoc(colRef, {
-          name: name,
-          email: email,
-          time: new Date().toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
-          likes: 0,
-          createdAt: Date.now()
-        });
-        document.getElementById('nameInput').value = '';
-        document.getElementById('emailInput').value = '';
-      } catch (e) {
-        console.error("Ошибка при отправке: ", e);
-      }
-    } else {
-        alert("Заполните все поля!");
+      await addDoc(colRef, {
+        name: name,
+        email: email,
+        time: new Date().toLocaleTimeString('ru-RU'),
+        likes: 0,
+        createdAt: Date.now()
+      });
+      document.getElementById('nameInput').value = '';
+      document.getElementById('emailInput').value = '';
     }
   };
 
-  // Слушатель обновлений
+  // Отображение данных
   const q = query(colRef, orderBy("createdAt", "desc"));
   onSnapshot(q, (snapshot) => {
     const container = document.getElementById('dataContainer');
@@ -83,26 +75,20 @@
     snapshot.forEach((docSnap) => {
       const data = docSnap.data();
       const id = docSnap.id;
-      
       container.innerHTML += `
         <div class="list-item">
             <div class="time">${data.time}</div>
             <div class="name">${data.name}</div>
             <div class="email">${data.email}</div>
-            <div class="likes" onclick="addLike('${id}')">
-                👍 ${data.likes || 0}
-            </div>
+            <div class="likes" onclick="addLike('${id}')">👍 ${data.likes || 0}</div>
         </div>
       `;
     });
   });
 
-  // Функция лайка
   window.addLike = async function(id) {
     const docRef = doc(db, "requests", id);
-    await updateDoc(docRef, {
-      likes: increment(1)
-    });
+    await updateDoc(docRef, { likes: increment(1) });
   };
 </script>
 
