@@ -1,251 +1,65 @@
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>KO-23: Полная Система Достижений</title>
-  <style>
-    body { font-family: 'Segoe UI', sans-serif; background: #f0f2f5; display: flex; justify-content: center; padding: 20px; margin: 0; color: #323232; }
-    
-    /* ТРЕХКОЛОНОЧНЫЙ МАКЕТ */
-    .page-container { display: flex; gap: 20px; max-width: 1200px; width: 100%; align-items: flex-start; }
-    
-    .side-column-left { width: 250px; display: flex; flex-direction: column; gap: 20px; }
-    .main-column { flex: 1; display: flex; flex-direction: column; gap: 20px; min-width: 400px; }
-    .side-column-right { width: 250px; display: flex; flex-direction: column; gap: 20px; }
-
-    .card { background: white; padding: 20px; border-radius: 20px; box-shadow: 0 8px 20px rgba(0,0,0,0.06); border: 1px solid #eef0f2; position: relative; }
-    
-    /* Таймер и кнопки */
-    .timer-display { font-size: 3em; font-weight: 800; color: #4285F4; text-align: center; margin: 10px 0; }
-    .grid-buttons { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 15px; }
-    .grid-buttons button { padding: 15px; border: none; border-radius: 12px; font-weight: bold; cursor: pointer; color: white; display: flex; align-items: center; justify-content: center; gap: 8px; }
-    .btn-study { background: #34a853; } .btn-coffee { background: #fbbc05; color: #3c4043 !important; }
-    .btn-game { background: #4285F4; } .btn-home { background: #70757a; }
-    .btn-logout { background: #ea4335; color: white; width: 100%; padding: 10px; border: none; border-radius: 10px; cursor: pointer; font-weight: bold; margin-bottom: 15px; }
-
-    /* Список достижений слева */
-    .badge-guide-item { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; font-size: 0.9em; }
-    .badge-guide-item b { font-size: 1.2em; }
-
-    /* Списки и Тултипы */
-    .section-header { font-weight: bold; margin-bottom: 15px; font-size: 1.1em; color: #202124; border-bottom: 2px solid #f0f2f5; padding-bottom: 5px; }
-    .user-item { display: flex; align-items: center; justify-content: space-between; padding: 10px; border-radius: 12px; position: relative; cursor: help; border-bottom: 1px solid #f1f3f4; }
-    .user-item:hover { background: #f8f9fa; }
-    .status-dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
-    
-    /* ФУНКЦИЯ: Улучшенный Tooltip (для медалей и ачивок) */
-    .user-item:hover::after {
-      content: attr(data-badges-info);
-      position: absolute;
-      left: 105%;
-      top: 0;
-      background: rgba(40, 40, 40, 0.95);
-      color: white;
-      padding: 12px;
-      border-radius: 12px;
-      font-size: 0.85em;
-      white-space: pre-line;
-      z-index: 999;
-      width: 220px;
-      box-shadow: 0 5px 20px rgba(0,0,0,0.3);
-    }
-
-    /* Чат и Прогресс */
-    .chat-box { height: 180px; overflow-y: auto; background: #f8f9fa; border-radius: 15px; padding: 15px; margin-bottom: 10px; border: 1px solid #e8eaed; }
-    .top-row { display: flex; justify-content: space-between; padding: 10px; background: #f8f9fa; border-radius: 10px; margin-bottom: 5px; }
-    
-    .progress-item { margin-bottom: 15px; }
-    .progress-bar-bg { background: #e8eaed; height: 8px; border-radius: 4px; overflow: hidden; margin-top: 5px; }
-    .progress-bar-fill { height: 100%; transition: width 0.5s; }
-
-    @media (max-width: 1000px) {
-      .page-container { flex-direction: column; align-items: center; }
-      .side-column-left, .side-column-right { width: 100%; }
-      .user-item:hover::after { left: 50%; top: 100%; transform: translateX(-50%); }
-    }
-  </style>
-</head>
-<body>
-
-<div class="page-container">
-  
-  <div class="side-column-left" id="guideSection" style="display: none;">
-    <div class="card">
-      <div class="section-header">🏅 Все награды</div>
-      <div class="badge-guide-item"><b>🥇</b> 1-е место в топе</div>
-      <div class="badge-guide-item"><b>🥈</b> 2-е место в топе</div>
-      <div class="badge-guide-item"><b>🥉</b> 3-е место в топе</div>
-      <hr style="border: 0; border-top: 1px solid #eee; margin: 10px 0;">
-      <div class="badge-guide-item"><b>🌅</b> Пташка (5:00 - 8:00)</div>
-      <div class="badge-guide-item"><b>🦉</b> Сова (0:00 - 4:00)</div>
-      <div class="badge-guide-item"><b>📢</b> Активист (20+ сообщ.)</div>
-      <div class="badge-guide-item"><b>🏃</b> Марафонец (2 часа+)</div>
-      <div class="badge-guide-item"><b>👑</b> Лидер группы</div>
-      <div class="badge-guide-item"><b>🔥</b> В огне (30м учебы)</div>
-      <div class="badge-guide-item"><b>🧘</b> Дзен (10м отдыха)</div>
-    </div>
-  </div>
-
-  <div class="main-column">
-    <div id="authSection" class="card" style="display: none; text-align: center;">
-      <h1>🎓 KO-23</h1>
-      <button class="btn-logout" style="background:#4285F4; font-size:1.1em;" onclick="login()">🌐 Войти через Google</button>
-    </div>
-
-    <div id="personalStatus" class="card" style="display: none;">
-      <button class="btn-logout" onclick="logout()">Выйти</button>
-      <div id="myGreeting" style="text-align:center; font-weight:bold; margin-bottom:10px;"></div>
-      <div class="timer-display" id="timer">0 сек.</div>
-      <div class="grid-buttons">
-        <button class="btn-study" onclick="changeStatus('Учусь', '#34a853')">📖 Учусь</button>
-        <button class="btn-coffee" onclick="changeStatus('Кофе', '#fbbc05')">🍵 Кофе</button>
-        <button class="btn-game" onclick="changeStatus('В игре', '#4285F4')">🕹️ В игре</button>
-        <button class="btn-home" onclick="changeStatus('Дома', '#70757a')">💤 Дома</button>
-      </div>
-    </div>
-
-    <div class="card">
-      <div class="section-header">👥 Группа сейчас</div>
-      <div id="groupList">...</div>
-    </div>
-
-    <div class="card">
-      <div class="section-header">💬 Чат</div>
-      <div id="chatMessages" class="chat-box"></div>
-      <div style="display:flex; gap:8px;">
-        <input type="text" id="chatInput" style="flex:1; padding:12px; border-radius:12px; border:1px solid #ddd;" placeholder="Сообщение...">
-        <button onclick="sendMessage()" style="padding:0 20px; border-radius:12px; border:none; background:#34a853; color:white; cursor:pointer;">➤</button>
-      </div>
-    </div>
-  </div>
-
-  <div class="side-column-right" id="rightSection" style="display: none;">
-    <div class="card">
-      <div class="section-header">🏆 Топ-5</div>
-      <div id="topList">...</div>
-    </div>
-    <div class="card">
-      <div class="section-header">🎯 Твой Прогресс</div>
-      <div id="questBars"></div>
-    </div>
-  </div>
-
-</div>
+<div id="dataContainer"></div>
 
 <script type="module">
-    import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm'
-    const URL = 'https://mqegsznybpcwnzthvrqp.supabase.co';
-    const KEY = 'sb_publishable_LIC1tZk2AbwL-aWExuotWw_OT52pl5S';
-    const supabase = createClient(URL, KEY);
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+  import { getFirestore, collection, addDoc, query, orderBy, onSnapshot, updateDoc, doc, increment } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-    let currentUser = null;
-    let secondsCounter = 0;
-    let sessionStudy = 0;
-    let sessionRest = 0;
+  const firebaseConfig = {
+    // ВСТАВЬ СВОИ ДАННЫЕ ЗДЕСЬ
+    apiKey: "YOUR_API_KEY",
+    projectId: "YOUR_PROJECT_ID",
+    // ... остальные поля
+  };
 
-    const badgeInfo = {
-      '🥇': '1-е место в рейтинге', '🥈': '2-е место в рейтинге', '🥉': '3-е место в рейтинге',
-      '🌅': 'Пташка (учеба ранним утром)', '🦉': 'Сова (ночные бдения)', '📢': 'Активист (активность в чате)',
-      '🏃': 'Марафонец (2 часа в сессии)', '👑': 'Лидер (текущий топ-1)', '🔥': 'В огне (30 мин без пауз)', '🧘': 'Дзен (время на отдых)'
-    };
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+  const colRef = collection(db, "requests");
 
-    window.login = () => supabase.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: window.location.href } });
-    window.logout = async () => { await supabase.auth.signOut(); location.reload(); };
-
-    window.changeStatus = async (txt, clr) => {
-      if (!currentUser) return;
-      await supabase.from('profiles').upsert({ id: currentUser.id, username: currentUser.user_metadata.full_name, status: txt, color: clr, last_seen: new Date().toISOString() });
-      fetchData();
-    };
-
-    window.sendMessage = async () => {
-      const input = document.getElementById('chatInput');
-      if (!input.value.trim() || !currentUser) return;
-      await supabase.from('chat_messages').insert({ username: currentUser.user_metadata.full_name, message: input.value });
-      input.value = ''; fetchMessages();
-    };
-
-    async function fetchMessages() {
-      const { data } = await supabase.from('chat_messages').select('*').order('created_at', { ascending: false }).limit(20);
-      if (data) document.getElementById('chatMessages').innerHTML = data.reverse().map(m => `<div><b>${m.username}:</b> ${m.message}</div>`).join('');
+  // ФУНКЦИЯ ОТПРАВКИ
+  window.sendData = async function() {
+    const name = document.getElementById('nameInput').value;
+    const email = document.getElementById('emailInput').value;
+    
+    if(name && email) {
+      await addDoc(colRef, {
+        name: name,
+        email: email,
+        time: new Date().toLocaleTimeString('it-IT'),
+        likes: 0,
+        createdAt: Date.now() // для сортировки
+      });
+      document.getElementById('nameInput').value = '';
+      document.getElementById('emailInput').value = '';
     }
+  };
 
-    async function fetchData() {
-      if (!currentUser) return;
-      const { data: p } = await supabase.from('profiles').select('*').eq('id', currentUser.id).single();
-      const { data: allUsers } = await supabase.from('profiles').select('*').order('study_time', { ascending: false });
-      const { count: msgCount } = await supabase.from('chat_messages').select('*', { count: 'exact', head: true }).eq('username', currentUser.user_metadata.full_name);
-
-      if (!p || !allUsers) return;
-      if (p.status === 'Учусь') sessionStudy += 10;
-      if (p.status === 'Кофе' || p.status === 'Дома') sessionRest += 10;
-
-      let badges = p.badges || [];
-      const hour = new Date().getHours();
-      const add = (b, cond) => { if (cond && !badges.includes(b)) badges.push(b); };
-
-      add('🌅', hour >= 5 && hour < 8);
-      add('🦉', hour >= 0 && hour < 4);
-      add('📢', msgCount >= 20);
-      add('🏃', secondsCounter >= 7200);
-      if (allUsers[0]?.id === currentUser.id) add('👑', true);
-      add('🔥', sessionStudy >= 1800);
-      add('🧘', sessionRest >= 600);
-
-      await supabase.from('profiles').update({ study_time: (p.study_time || 0) + 10, badges: badges, last_seen: new Date().toISOString() }).eq('id', currentUser.id);
-      renderUI(allUsers, p, msgCount);
-    }
-
-    function renderUI(users, me, msgs) {
-      const medals = ['🥇', '🥈', '🥉'];
+  // ПОЛУЧЕНИЕ ДАННЫХ (Real-time)
+  const q = query(colRef, orderBy("createdAt", "desc"));
+  onSnapshot(q, (snapshot) => {
+    const container = document.getElementById('dataContainer');
+    container.innerHTML = '';
+    snapshot.forEach((docSnap) => {
+      const data = docSnap.data();
+      const id = docSnap.id;
       
-      // Список группы с расширенным тултипом
-      document.getElementById('groupList').innerHTML = users.map((u, i) => {
-        let userBadges = [...(u.badges || [])];
-        let tooltipList = [];
-        
-        // Добавляем медали в тултип, если человек в топ-3
-        if (i < 3) tooltipList.push(`${medals[i]} ${badgeInfo[medals[i]]}`);
-        userBadges.forEach(b => tooltipList.push(`${b} ${badgeInfo[b] || ''}`));
-        
-        const finalTooltip = tooltipList.length > 0 ? `Профиль ${u.username}:\n\n${tooltipList.join('\n')}` : `У ${u.username} пока нет наград`;
-
-        return `
-        <div class="user-item" data-badges-info="${finalTooltip}">
-          <span><div class="status-dot" style="background:${u.color}"></div> ${i < 3 ? medals[i] : ''} <b>${u.username}</b> ${userBadges.join('')}</span>
-          <small>${u.status || '...'}</small>
-        </div>`;
-      }).join('');
-
-      document.getElementById('topList').innerHTML = users.slice(0, 5).map((u, i) => `
-        <div class="top-row"><span>${i<3?medals[i]:i+1+'.'} ${u.username}</span><b>${Math.round(u.study_time/60)}м</b></div>`).join('');
-      
-      const sProg = Math.min((me.study_time / 36000) * 100, 100);
-      const mProg = Math.min((msgs / 20) * 100, 100);
-      document.getElementById('questBars').innerHTML = `
-        <div class="progress-item">
-          <div style="display:flex; justify-content:space-between; font-size:0.8em;"><span>📚 Учеба</span><span>${Math.round(me.study_time/60)}/600м</span></div>
-          <div class="progress-bar-bg"><div class="progress-bar-fill" style="width:${sProg}%; background:#34a853;"></div></div>
+      container.innerHTML += `
+        <div class="list-item">
+            <div class="time">${data.time}</div>
+            <div class="name">${data.name}</div>
+            <div class="email">${data.email}</div>
+            <div class="likes" onclick="addLike('${id}')" style="cursor:pointer">
+                👍 ${data.likes || 0}
+            </div>
         </div>
-        <div class="progress-item">
-          <div style="display:flex; justify-content:space-between; font-size:0.8em;"><span>💬 Чатик</span><span>${msgs}/20</span></div>
-          <div class="progress-bar-bg"><div class="progress-bar-fill" style="width:${mProg}%; background:#4285F4;"></div></div>
-        </div>`;
-    }
+      `;
+    });
+  });
 
-    async function init() {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session) {
-        currentUser = session.user;
-        document.querySelectorAll('#personalStatus, #guideSection, #rightSection').forEach(el => el.style.display = 'block');
-        document.getElementById('myGreeting').innerText = "Привет, " + currentUser.user_metadata.full_name;
-        setInterval(() => { secondsCounter++; document.getElementById('timer').innerText = secondsCounter + " сек."; }, 1000);
-        setInterval(fetchData, 10000); setInterval(fetchMessages, 3000);
-        fetchData(); fetchMessages();
-      } else { document.getElementById('authSection').style.display = 'block'; }
-    }
-    init();
+  // ФУНКЦИЯ ЛАЙКА
+  window.addLike = async function(id) {
+    const docRef = doc(db, "requests", id);
+    await updateDoc(docRef, {
+      likes: increment(1)
+    });
+  };
 </script>
-</body>
-</html>
