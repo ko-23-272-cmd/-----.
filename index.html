@@ -2,24 +2,41 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <title>Панель управления</title>
+    <title>Firebase Multi-Function App</title>
     <style>
-        body { background: #f0f2f5; font-family: sans-serif; display: flex; flex-direction: column; align-items: center; padding-top: 50px; }
-        .card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); width: 400px; margin-bottom: 20px; }
-        input { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; }
-        button { width: 100%; padding: 14px; background: #007bff; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; }
-        .post { background: white; width: 400px; padding: 15px; border-radius: 10px; margin-bottom: 10px; position: relative; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
-        .post .name { font-weight: bold; }
-        .btn-red { background: #dc3545; margin-top: 10px; padding: 5px; }
+        body { background: #f0f2f5; font-family: 'Segoe UI', sans-serif; display: flex; flex-direction: column; align-items: center; padding: 40px; }
+        .card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); width: 380px; margin-bottom: 25px; }
+        input, select { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; }
+        button.main-btn { width: 100%; padding: 12px; background: #007bff; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; }
+        
+        .post { width: 380px; padding: 20px; border-radius: 12px; margin-bottom: 15px; position: relative; box-shadow: 0 4px 10px rgba(0,0,0,0.05); transition: 0.3s; border: 1px solid rgba(0,0,0,0.1); }
+        .name { font-weight: bold; font-size: 1.1em; }
+        .text { margin: 10px 0; opacity: 0.9; }
+        
+        /* Темы оформления */
+        .theme-white { background: #ffffff; color: #333; }
+        .theme-dark { background: #2d3436; color: #dfe6e9; }
+        .theme-blue { background: #0984e3; color: white; }
+        .theme-purple { background: #6c5ce7; color: white; }
+
+        .actions { display: flex; gap: 8px; margin-top: 15px; flex-wrap: wrap; }
+        .btn-sm { padding: 6px 12px; border-radius: 6px; border: 1px solid rgba(0,0,0,0.1); cursor: pointer; font-size: 13px; background: rgba(255,255,255,0.2); color: inherit; }
+        .btn-del { border-color: #ff7675; color: #ff7675; }
     </style>
 </head>
 <body>
 
     <div class="card">
-        <h2>Панель управления</h2>
-        <input type="text" id="userName" placeholder="Имя профиля">
-        <input type="text" id="userText" placeholder="Рабочий Email">
-        <button onclick="saveMessage()">Опубликовать в облако</button>
+        <h3 style="margin-top:0">Новая запись</h3>
+        <input type="text" id="userName" placeholder="Имя автора">
+        <input type="text" id="userText" placeholder="Текст сообщения">
+        <select id="userTheme">
+            <option value="theme-white">Светлая</option>
+            <option value="theme-dark">Темная</option>
+            <option value="theme-blue">Синяя</option>
+            <option value="theme-purple">Фиолетовая</option>
+        </select>
+        <button class="main-btn" onclick="saveMessage()">Опубликовать в Firebase</button>
     </div>
 
     <div id="messagesList"></div>
@@ -28,7 +45,6 @@
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
     import { getFirestore, collection, addDoc, query, orderBy, onSnapshot, serverTimestamp, doc, updateDoc, deleteDoc, increment } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-    // Твои реальные данные из настроек проекта
     const firebaseConfig = {
         apiKey: "AIzaSyAQAwIs7YCU-gb1aeO0xGF78Hnp84auIIg",
         authDomain: "vladidmir-b24a1.firebaseapp.com",
@@ -40,41 +56,52 @@
 
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
-    const colRef = collection(db, "messages"); // Работаем с коллекцией messages
+    const colRef = collection(db, "messages");
 
-    // 1. Создание (Create)
+    // 1. СОЗДАНИЕ (Create)
     window.saveMessage = async function() {
         const name = document.getElementById('userName').value;
         const text = document.getElementById('userText').value;
+        const theme = document.getElementById('userTheme').value;
         if (name && text) {
-            await addDoc(colRef, { name, text, likes: 0, timestamp: serverTimestamp() });
+            await addDoc(colRef, { name, text, theme, likes: 0, timestamp: serverTimestamp() });
             document.getElementById('userName').value = '';
             document.getElementById('userText').value = '';
         }
     };
 
-    // 2. Обновление (Update - Лайк)
+    // 2. ЛАЙК (Update - Число)
     window.addLike = async function(id) {
         await updateDoc(doc(db, "messages", id), { likes: increment(1) });
     };
 
-    // 3. Удаление (Delete)
-    window.deleteMessage = async function(id) {
-        if(confirm("Удалить?")) await deleteDoc(doc(db, "messages", id));
+    // 3. СМЕНА ТЕМЫ (Update - Строка)
+    window.changeTheme = async function(id) {
+        const themes = ['theme-white', 'theme-dark', 'theme-blue', 'theme-purple'];
+        const newTheme = themes[Math.floor(Math.random() * themes.length)];
+        await updateDoc(doc(db, "messages", id), { theme: newTheme });
     };
 
-    // 4. Чтение (Read - Realtime)
-    onSnapshot(query(colRef, orderBy("timestamp", "desc")), (snapshot) => {
+    // 4. УДАЛЕНИЕ (Delete)
+    window.deleteMessage = async function(id) {
+        if(confirm("Удалить это сообщение?")) await deleteDoc(doc(db, "messages", id));
+    };
+
+    // ОТОБРАЖЕНИЕ
+    onSnapshot(query(colRef, orderBy("timestamp", "desc")), (snap) => {
         const list = document.getElementById('messagesList');
         list.innerHTML = '';
-        snapshot.forEach((s) => {
+        snap.forEach((s) => {
             const d = s.data();
             list.innerHTML += `
-                <div class="post">
+                <div class="post ${d.theme || 'theme-white'}">
                     <div class="name">${d.name}</div>
                     <div class="text">${d.text}</div>
-                    <button onclick="addLike('${s.id}')">👍 ${d.likes || 0}</button>
-                    <button class="btn-red" onclick="deleteMessage('${s.id}')">Удалить</button>
+                    <div class="actions">
+                        <button class="btn-sm" onclick="addLike('${s.id}')">👍 ${d.likes || 0}</button>
+                        <button class="btn-sm" onclick="changeTheme('${s.id}')">🎨 Тема</button>
+                        <button class="btn-sm btn-del" onclick="deleteMessage('${s.id}')">🗑 Удалить</button>
+                    </div>
                 </div>`;
         });
     });
