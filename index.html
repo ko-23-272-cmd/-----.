@@ -1,39 +1,81 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Панель управления</title>
+    <style>
+        body { background-color: #f5f7f8; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; display: flex; flex-direction: column; align-items: center; padding: 50px 20px; margin: 0; }
+        .card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); width: 100%; max-width: 400px; margin-bottom: 25px; }
+        h2 { margin-top: 0; font-size: 20px; color: #333; margin-bottom: 20px; }
+        input { width: 100%; padding: 12px; margin-bottom: 15px; border: 1px solid #e0e0e0; border-radius: 8px; box-sizing: border-box; font-size: 14px; outline: none; }
+        input:focus { border-color: #007bff; }
+        button { width: 100%; padding: 14px; background-color: #007bff; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 15px; transition: background 0.2s; }
+        button:hover { background-color: #0056b3; }
+        
+        #dataContainer { width: 100%; max-width: 400px; }
+        .list-item { background: white; padding: 18px; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); margin-bottom: 12px; position: relative; border-left: 4px solid transparent; }
+        .name { font-weight: 700; font-size: 15px; color: #222; }
+        .email { color: #666; font-size: 14px; margin: 6px 0 10px 0; }
+        .time { position: absolute; top: 18px; right: 18px; font-size: 11px; color: #aaa; }
+        .likes { display: inline-flex; align-items: center; font-size: 13px; background: #fff5e6; padding: 4px 10px; border-radius: 6px; color: #d48806; cursor: pointer; font-weight: 600; border: 1px solid #ffe7ba; }
+        .likes:hover { background: #ffe7ba; }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <h2>Панель управления</h2>
+    <input type="text" id="nameInput" placeholder="Имя профиля">
+    <input type="email" id="emailInput" placeholder="Рабочий Email">
+    <button onclick="sendData()">Опубликовать в облако</button>
+</div>
+
 <div id="dataContainer"></div>
 
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
   import { getFirestore, collection, addDoc, query, orderBy, onSnapshot, updateDoc, doc, increment } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
+  // ТУТ ТВОИ ДАННЫЕ ИЗ FIREBASE
   const firebaseConfig = {
-    // ВСТАВЬ СВОИ ДАННЫЕ ЗДЕСЬ
-    apiKey: "YOUR_API_KEY",
-    projectId: "YOUR_PROJECT_ID",
-    // ... остальные поля
+    apiKey: "ТВОЙ_API_KEY",
+    authDomain: "ТВОЙ_ID.firebaseapp.com",
+    projectId: "ТВОЙ_ID",
+    storageBucket: "ТВОЙ_ID.appspot.com",
+    messagingSenderId: "...",
+    appId: "..."
   };
 
   const app = initializeApp(firebaseConfig);
   const db = getFirestore(app);
   const colRef = collection(db, "requests");
 
-  // ФУНКЦИЯ ОТПРАВКИ
+  // Отправка данных
   window.sendData = async function() {
     const name = document.getElementById('nameInput').value;
     const email = document.getElementById('emailInput').value;
     
     if(name && email) {
-      await addDoc(colRef, {
-        name: name,
-        email: email,
-        time: new Date().toLocaleTimeString('it-IT'),
-        likes: 0,
-        createdAt: Date.now() // для сортировки
-      });
-      document.getElementById('nameInput').value = '';
-      document.getElementById('emailInput').value = '';
+      try {
+        await addDoc(colRef, {
+          name: name,
+          email: email,
+          time: new Date().toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
+          likes: 0,
+          createdAt: Date.now()
+        });
+        document.getElementById('nameInput').value = '';
+        document.getElementById('emailInput').value = '';
+      } catch (e) {
+        console.error("Ошибка при отправке: ", e);
+      }
+    } else {
+        alert("Заполните все поля!");
     }
   };
 
-  // ПОЛУЧЕНИЕ ДАННЫХ (Real-time)
+  // Слушатель обновлений
   const q = query(colRef, orderBy("createdAt", "desc"));
   onSnapshot(q, (snapshot) => {
     const container = document.getElementById('dataContainer');
@@ -47,7 +89,7 @@
             <div class="time">${data.time}</div>
             <div class="name">${data.name}</div>
             <div class="email">${data.email}</div>
-            <div class="likes" onclick="addLike('${id}')" style="cursor:pointer">
+            <div class="likes" onclick="addLike('${id}')">
                 👍 ${data.likes || 0}
             </div>
         </div>
@@ -55,7 +97,7 @@
     });
   });
 
-  // ФУНКЦИЯ ЛАЙКА
+  // Функция лайка
   window.addLike = async function(id) {
     const docRef = doc(db, "requests", id);
     await updateDoc(docRef, {
@@ -63,3 +105,6 @@
     });
   };
 </script>
+
+</body>
+</html>
