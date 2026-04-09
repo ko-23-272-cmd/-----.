@@ -2,110 +2,125 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Firebase Control Panel</title>
+    <title>Firebase Cloud App</title>
     <style>
-        /* Базовые стили */
-        body { background: #f0f2f5; font-family: 'Segoe UI', sans-serif; display: flex; flex-direction: column; align-items: center; padding: 40px 20px; }
-        .card { background: white; padding: 25px; border-radius: 15px; box-shadow: 0 8px 30px rgba(0,0,0,0.05); width: 100%; max-width: 400px; margin-bottom: 25px; }
-        input, select { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; }
-        button.main-btn { width: 100%; padding: 12px; background: #007bff; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; transition: 0.3s; }
-        button.main-btn:hover { background: #0056b3; }
-
-        /* Стили постов и ТЕМЫ */
-        .post { width: 100%; max-width: 400px; padding: 20px; border-radius: 12px; margin-bottom: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); transition: 0.4s; border: 1px solid rgba(0,0,0,0.1); }
-        .theme-white { background: #ffffff; color: #333; }
-        .theme-dark { background: #2d3436; color: #dfe6e9; border-color: #444; }
-        .theme-blue { background: #0984e3; color: white; border-color: #0771c1; }
-        .theme-purple { background: #6c5ce7; color: white; border-color: #5849c4; }
-
-        .name { font-weight: bold; font-size: 1.1em; }
-        .text { margin: 10px 0; opacity: 0.9; }
-
-        /* Кнопки действий */
-        .actions { display: flex; gap: 8px; margin-top: 15px; flex-wrap: wrap; }
-        .btn-sm { padding: 8px 14px; border-radius: 8px; border: 1px solid rgba(0,0,0,0.1); cursor: pointer; font-size: 13px; background: rgba(255,255,255,0.2); color: inherit; font-weight: 600; }
-        .btn-del { border-color: rgba(255, 0, 0, 0.3); color: #ff7675; background: rgba(255, 0, 0, 0.05); }
+        body { font-family: 'Inter', sans-serif; background: #f4f7f6; display: flex; flex-direction: column; align-items: center; padding: 20px; }
+        .container { width: 100%; max-width: 500px; background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-bottom: 20px; }
+        input, select { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; }
+        button { background: #007bff; color: white; border: none; padding: 12px; border-radius: 6px; width: 100%; font-weight: 600; cursor: pointer; }
+        .post { background: #fff; border: 1px solid #eaeaea; padding: 15px; margin-top: 15px; border-radius: 8px; width: 100%; max-width: 500px; }
+        .theme-dark { background: #2d3436; color: #dfe6e9; }
+        .theme-blue { background: #0984e3; color: white; }
+        .attached-img { width: 100%; border-radius: 8px; margin-top: 10px; }
+        .post-header { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+        .post-avatar { width: 30px; height: 30px; border-radius: 50%; }
+        .btn-row { display: flex; gap: 10px; margin-top: 10px; }
+        .btn-sm { width: auto; padding: 5px 15px; font-size: 12px; }
     </style>
 </head>
 <body>
 
-<div class="card">
-    <h2 style="margin-top:0; font-size: 22px;">Панель управления</h2>
-    <input type="text" id="nameInp" placeholder="Имя профиля">
-    <input type="text" id="textInp" placeholder="Рабочий Email / Сообщение">
-    <select id="themeSelect">
-        <option value="theme-white">Светлая тема</option>
-        <option value="theme-dark">Темная тема</option>
-        <option value="theme-blue">Синяя тема</option>
-        <option value="theme-purple">Фиолетовая тема</option>
-    </select>
-    <button class="main-btn" onclick="sendData()">Опубликовать в облако</button>
-</div>
+    <div id="authSection" class="container" style="text-align: center;">
+        <button id="loginBtn">Войти через Google</button>
+        <div id="userInfo" style="display: none;">
+            <div class="post-header" style="justify-content: center;">
+                <img id="userPhoto" class="post-avatar">
+                <span id="userName" style="font-weight: bold;"></span>
+            </div>
+            <button id="logoutBtn" style="background: #ff4757; margin-top: 10px;">Выйти</button>
+        </div>
+    </div>
 
-<div id="messagesList"></div>
+    <div id="messageForm" class="container" style="display: none;">
+        <h3>Создать запись</h3>
+        <input type="text" id="content" placeholder="Что у вас нового?">
+        <input type="text" id="imgUrl" placeholder="Ссылка на картинку (необязательно)">
+        <select id="themeSelect">
+            <option value="theme-white">Светлая тема</option>
+            <option value="theme-dark">Темная тема</option>
+            <option value="theme-blue">Синяя тема</option>
+        </select>
+        <button id="mainBtn">Опубликовать в облако</button>
+    </div>
+
+    <div id="feed"></div>
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
     import { getFirestore, collection, addDoc, query, orderBy, onSnapshot, serverTimestamp, doc, updateDoc, deleteDoc, increment } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+    import { getAuth, signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
-    // Твои актуальные ключи из скриншота
+    // ТВОИ ДАННЫЕ ИЗ image_8e9645
     const firebaseConfig = {
-        apiKey: "AIzaSyAQAwIs7YCU-gb1aeO0xGF78Hnp84auIIg",
-        authDomain: "vladidmir-b24a1.firebaseapp.com",
-        projectId: "vladidmir-b24a1",
-        storageBucket: "vladidmir-b24a1.firebasestorage.app",
-        messagingSenderId: "833649325991",
-        appId: "1:833649325991:web:da1b66ec85543efc002882"
+        apiKey: "AIzaSyDgUxR0TXafc_qA-rpdSzKn33265IfxsHU",
+        authDomain: "qazaq-a072e.firebaseapp.com",
+        projectId: "qazaq-a072e",
+        storageBucket: "qazaq-a072e.firebasestorage.app",
+        messagingSenderId: "47025480090",
+        appId: "1:47025480090:web:3dd74ff29bc0c149f39a23"
     };
 
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
-    const colRef = collection(db, "messages"); // Работаем с коллекцией messages
+    const auth = getAuth(app);
+    const provider = new GoogleAuthProvider();
 
-    // 1. СОЗДАНИЕ (Create)
-    window.sendData = async function() {
-        const name = document.getElementById('nameInp').value;
-        const text = document.getElementById('textInp').value;
-        const theme = document.getElementById('themeSelect').value;
-        if (name && text) {
-            await addDoc(colRef, { name, text, theme, likes: 0, timestamp: serverTimestamp() });
-            document.getElementById('nameInp').value = '';
-            document.getElementById('textInp').value = '';
+    // АВТОРИЗАЦИЯ
+    document.getElementById('loginBtn').onclick = () => signInWithPopup(auth, provider);
+    document.getElementById('logoutBtn').onclick = () => signOut(auth);
+
+    onAuthStateChanged(auth, (user) => {
+        document.getElementById('loginBtn').style.display = user ? 'none' : 'block';
+        document.getElementById('userInfo').style.display = user ? 'block' : 'none';
+        document.getElementById('messageForm').style.display = user ? 'block' : 'none';
+        if (user) {
+            document.getElementById('userName').innerText = user.displayName;
+            document.getElementById('userPhoto').src = user.photoURL;
         }
+    });
+
+    // СОХРАНЕНИЕ
+    document.getElementById('mainBtn').onclick = async () => {
+        const text = document.getElementById('content').value;
+        const img = document.getElementById('imgUrl').value;
+        const theme = document.getElementById('themeSelect').value;
+
+        if (!text) return alert("Введите текст");
+
+        await addDoc(collection(db, "messages"), {
+            name: auth.currentUser.displayName,
+            photo: auth.currentUser.photoURL,
+            text: text,
+            img: img,
+            theme: theme,
+            likes: 0,
+            timestamp: serverTimestamp()
+        });
+        document.getElementById('content').value = "";
+        document.getElementById('imgUrl').value = "";
     };
 
-    // 2. ЛАЙК (Update числового поля)
-    window.addLike = async function(id) {
-        await updateDoc(doc(db, "messages", id), { likes: increment(1) });
-    };
+    // ФУНКЦИИ УПРАВЛЕНИЯ
+    window.processLike = (id) => updateDoc(doc(db, "messages", id), { likes: increment(1) });
+    window.deletePost = (id) => confirm("Удалить?") && deleteDoc(doc(db, "messages", id));
 
-    // 3. СМЕНА ТЕМЫ (Визуальное обновление)
-    window.changeTheme = async function(id) {
-        const themes = ['theme-white', 'theme-dark', 'theme-blue', 'theme-purple'];
-        const newTheme = themes[Math.floor(Math.random() * themes.length)];
-        await updateDoc(doc(db, "messages", id), { theme: newTheme });
-    };
-
-    // 4. УДАЛЕНИЕ (Delete)
-    window.deleteMessage = async function(id) {
-        if(confirm("Удалить эту запись?")) await deleteDoc(doc(db, "messages", id));
-    };
-
-    // 5. ЧТЕНИЕ (Read - Realtime)
-    onSnapshot(query(colRef, orderBy("timestamp", "desc")), (snap) => {
-        const list = document.getElementById('messagesList');
-        list.innerHTML = '';
-        snap.forEach((s) => {
+    // ЛЕНТА
+    onSnapshot(query(collection(db, "messages"), orderBy("timestamp", "desc")), (snap) => {
+        const feed = document.getElementById('feed');
+        feed.innerHTML = '';
+        snap.forEach(s => {
             const d = s.data();
-            list.innerHTML += `
-                <div class="post ${d.theme || 'theme-white'}">
-                    <div class="name">${d.name}</div>
-                    <div class="text">${d.text}</div>
-                    <div class="actions">
-                        <button class="btn-sm" onclick="addLike('${s.id}')">👍 ${d.likes || 0}</button>
-                        <button class="btn-sm" onclick="changeTheme('${s.id}')">🎨 Тема</button>
-                        <button class="btn-sm btn-del" onclick="deleteMessage('${s.id}')">Удалить</button>
+            feed.innerHTML += `
+                <div class="post ${d.theme}">
+                    <div class="post-header">
+                        <img src="${d.photo}" class="post-avatar">
+                        <b>${d.name}</b>
+                    </div>
+                    <p>${d.text}</p>
+                    ${d.img ? `<img src="${d.img}" class="attached-img">` : ''}
+                    <div class="btn-row">
+                        <button class="btn-sm" onclick="processLike('${s.id}')">👍 ${d.likes}</button>
+                        <button class="btn-sm" onclick="deletePost('${s.id}')" style="background:#ff4757">🗑</button>
                     </div>
                 </div>`;
         });
