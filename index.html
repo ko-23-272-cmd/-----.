@@ -2,59 +2,64 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <title>Firebase Auth App</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Панель управления</title>
     <style>
-        body { font-family: sans-serif; background: #f0f2f5; display: flex; flex-direction: column; align-items: center; padding: 20px; }
-        .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); width: 100%; max-width: 450px; margin-bottom: 20px; }
-        input, select, button { width: 100%; padding: 10px; margin: 5px 0; border-radius: 6px; border: 1px solid #ccc; box-sizing: border-box; }
-        button { background: #007bff; color: white; border: none; font-weight: bold; cursor: pointer; }
-        .post { background: white; padding: 15px; border-radius: 8px; margin-bottom: 10px; width: 100%; max-width: 450px; border: 1px solid #ddd; }
-        .theme-dark { background: #333; color: white; }
-        .theme-blue { background: #007bff; color: white; }
-        .user-bar { display: flex; align-items: center; gap: 10px; margin-bottom: 15px; }
-        .avatar { width: 35px; height: 35px; border-radius: 50%; }
-        .actions { display: flex; gap: 10px; margin-top: 10px; }
-        .btn-sm { width: auto; padding: 5px 10px; font-size: 12px; }
+        body { font-family: 'Inter', sans-serif; background: #f4f7f6; display: flex; flex-direction: column; align-items: center; padding: 20px; }
+        .container { width: 100%; max-width: 500px; background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-bottom: 20px; box-sizing: border-box; }
+        .auth-bar { background: white; padding: 15px; border-radius: 12px; margin-bottom: 20px; display: flex; align-items: center; gap: 15px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); width: 100%; max-width: 500px; }
+        .user-avatar { width: 40px; height: 40px; border-radius: 50%; border: 2px solid #007bff; }
+        input, select { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; }
+        button { background: #007bff; color: white; border: none; padding: 12px; border-radius: 6px; width: 100%; font-weight: 600; cursor: pointer; transition: 0.3s; }
+        button:hover { background: #0056b3; }
+        .logout-btn { background: #ff4757; padding: 8px 15px; width: auto; font-size: 14px; }
+        .post { background: #fff; border: 1px solid #eaeaea; padding: 15px; margin-top: 15px; border-radius: 8px; width: 100%; max-width: 500px; box-sizing: border-box; }
+        .theme-dark { background: #2d3436; color: #dfe6e9; }
+        .theme-blue { background: #0984e3; color: white; }
+        .post-header { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+        .post-avatar { width: 30px; height: 30px; border-radius: 50%; }
+        .like-btn { cursor: pointer; border: none; background: #f8f9fa; padding: 5px 12px; border-radius: 20px; margin-top: 10px; color: #333; }
+        .delete-btn { background: #ff4757; width: auto; padding: 5px 12px; font-size: 12px; margin-left: 10px; }
     </style>
 </head>
 <body>
 
-    <div id="authBox" class="card" style="text-align: center;">
+    <div id="authSection" class="container" style="text-align: center;">
         <button id="loginBtn">Войти через Google</button>
-        <div id="userProfile" style="display: none;">
-            <div class="user-bar" style="justify-content: center;">
-                <img id="uPhoto" class="avatar">
-                <span id="uName"></span>
-            </div>
-            <button id="logoutBtn" style="background: #dc3545;">Выйти</button>
+        <div id="userInfo" style="display: none;" class="auth-bar">
+            <img id="userPhoto" class="user-avatar" src="" alt="Avatar">
+            <span id="userName" style="font-weight: bold; flex-grow: 1; text-align: left;"></span>
+            <button id="logoutBtn" class="logout-btn">Выйти</button>
         </div>
     </div>
 
-    <div id="formBox" class="card" style="display: none;">
-        <input type="text" id="msgText" placeholder="Ваше сообщение">
-        <input type="text" id="msgImg" placeholder="Ссылка на картинку">
-        <select id="msgTheme">
+    <div id="messageForm" class="container" style="display: none;">
+        <h3>Создать запись</h3>
+        <input type="text" id="content" placeholder="Что у вас нового?">
+        <input type="text" id="imgUrl" placeholder="Ссылка на картинку (необязательно)">
+        <select id="themeSelect">
             <option value="theme-white">Светлая тема</option>
             <option value="theme-dark">Темная тема</option>
             <option value="theme-blue">Синяя тема</option>
         </select>
-        <button onclick="sendPost()">Опубликовать</button>
+        <button id="mainBtn">Опубликовать в облако</button>
     </div>
 
-    <div id="feed"></div>
+    <div id="feed" style="width: 100%; max-width: 500px;"></div>
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js";
     import { getFirestore, collection, addDoc, query, orderBy, onSnapshot, serverTimestamp, doc, updateDoc, deleteDoc, increment } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js";
     import { getAuth, signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-auth.js";
 
+    // АКТУАЛЬНЫЕ ДАННЫЕ ИЗ ТВОЕГО ПРОЕКТА vladidmir-b24a1
     const firebaseConfig = {
-        apiKey: "AIzaSyDgUxR0TXafc_qA-rpdSzKn33265IfxsHU",
-        authDomain: "qazaq-a072e.firebaseapp.com",
-        projectId: "qazaq-a072e",
-        storageBucket: "qazaq-a072e.firebasestorage.app",
-        messagingSenderId: "47025480090",
-        appId: "1:47025480090:web:3dd74ff29bc0c149f39a23"
+        apiKey: "AIzaSyDa-I1b66ec85543efc002882", // ЗАМЕНИ ЭТО НА apiKey ИЗ СВОИХ НАСТРОЕК PROJECT SETTINGS
+        authDomain: "vladidmir-b24a1.firebaseapp.com",
+        projectId: "vladidmir-b24a1",
+        storageBucket: "vladidmir-b24a1.firebasestorage.app",
+        messagingSenderId: "833649325991",
+        appId: "1:833649325991:web:da1b66ec85543efc002882"
     };
 
     const app = initializeApp(firebaseConfig);
@@ -62,13 +67,12 @@
     const auth = getAuth(app);
     const provider = new GoogleAuthProvider();
 
-    // ВХОД
     document.getElementById('loginBtn').onclick = async () => {
         try {
             await signInWithPopup(auth, provider);
-        } catch (e) {
-            console.error("ОШИБКА АВТОРИЗАЦИИ:", e.code, e.message);
-            alert("Ошибка входа! Проверьте консоль (F12) или добавьте домен в настройки Firebase.");
+        } catch (error) {
+            console.error("Ошибка:", error.code);
+            alert("Ошибка входа: " + error.message);
         }
     };
 
@@ -76,53 +80,52 @@
 
     onAuthStateChanged(auth, (user) => {
         document.getElementById('loginBtn').style.display = user ? 'none' : 'block';
-        document.getElementById('userProfile').style.display = user ? 'block' : 'none';
-        document.getElementById('formBox').style.display = user ? 'block' : 'none';
-        if(user) {
-            document.getElementById('uName').innerText = user.displayName;
-            document.getElementById('uPhoto').src = user.photoURL;
+        document.getElementById('userInfo').style.display = user ? 'flex' : 'none';
+        document.getElementById('messageForm').style.display = user ? 'block' : 'none';
+        if (user) {
+            document.getElementById('userName').innerText = user.displayName;
+            document.getElementById('userPhoto').src = user.photoURL;
         }
     });
 
-    // ОТПРАВКА
-    window.sendPost = async () => {
-        const text = document.getElementById('msgText').value;
-        const img = document.getElementById('msgImg').value;
-        const theme = document.getElementById('msgTheme').value;
-        if(!text) return;
+    document.getElementById('mainBtn').onclick = async () => {
+        const content = document.getElementById('content').value;
+        const img = document.getElementById('imgUrl').value;
+        const theme = document.getElementById('themeSelect').value;
+        if (!content) return alert("Введите текст!");
 
+        // Используем коллекцию messages, как в твоих правилах
         await addDoc(collection(db, "messages"), {
             name: auth.currentUser.displayName,
             photo: auth.currentUser.photoURL,
-            text: text,
+            text: content,
             img: img,
             theme: theme,
             likes: 0,
             timestamp: serverTimestamp()
         });
-        document.getElementById('msgText').value = "";
-        document.getElementById('msgImg').value = "";
+        document.getElementById('content').value = "";
+        document.getElementById('imgUrl').value = "";
     };
 
-    // ФУНКЦИИ
-    window.addLike = (id) => updateDoc(doc(db, "messages", id), { likes: increment(1) });
-    window.delPost = (id) => confirm("Удалить?") && deleteDoc(doc(db, "messages", id));
+    window.processLike = (id) => updateDoc(doc(db, "messages", id), { likes: increment(1) });
+    window.deletePost = (id) => confirm("Удалить?") && deleteDoc(doc(db, "messages", id));
 
-    // ЛЕНТА
     onSnapshot(query(collection(db, "messages"), orderBy("timestamp", "desc")), (snap) => {
         const feed = document.getElementById('feed');
         feed.innerHTML = "";
-        snap.forEach(s => {
+        snap.forEach((s) => {
             const d = s.data();
             feed.innerHTML += `
                 <div class="post ${d.theme}">
-                    <div class="user-bar"><img src="${d.photo}" class="avatar"><b>${d.name}</b></div>
-                    <div>${d.text}</div>
-                    ${d.img ? `<img src="${d.img}" style="width:100%; border-radius:8px; margin-top:10px;">` : ''}
-                    <div class="actions">
-                        <button class="btn-sm" onclick="addLike('${s.id}')">👍 ${d.likes}</button>
-                        <button class="btn-sm" onclick="delPost('${s.id}')" style="background:#dc3545">🗑</button>
+                    <div class="post-header">
+                        <img src="${d.photo}" class="post-avatar">
+                        <b>${d.name}</b>
                     </div>
+                    <p>${d.text}</p>
+                    ${d.img ? `<img src="${d.img}" style="width:100%; border-radius:8px;">` : ''}
+                    <button class="like-btn" onclick="processLike('${s.id}')">👍 ${d.likes || 0}</button>
+                    <button class="delete-btn" onclick="deletePost('${s.id}')">🗑</button>
                 </div>`;
         });
     });
