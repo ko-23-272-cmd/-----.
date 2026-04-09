@@ -1,10 +1,34 @@
-<div id="messagesList"></div>
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Панель управления</title>
+    <style>
+        body { background: #f0f2f5; font-family: sans-serif; display: flex; flex-direction: column; align-items: center; padding-top: 50px; }
+        .card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); width: 400px; margin-bottom: 20px; }
+        input { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; }
+        button { width: 100%; padding: 14px; background: #007bff; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; }
+        .post { background: white; width: 400px; padding: 15px; border-radius: 10px; margin-bottom: 10px; position: relative; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+        .post .name { font-weight: bold; }
+        .btn-red { background: #dc3545; margin-top: 10px; padding: 5px; }
+    </style>
+</head>
+<body>
+
+    <div class="card">
+        <h2>Панель управления</h2>
+        <input type="text" id="userName" placeholder="Имя профиля">
+        <input type="text" id="userText" placeholder="Рабочий Email">
+        <button onclick="saveMessage()">Опубликовать в облако</button>
+    </div>
+
+    <div id="messagesList"></div>
 
 <script type="module">
-    // Добавляем методы doc, updateDoc, deleteDoc, increment
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
     import { getFirestore, collection, addDoc, query, orderBy, onSnapshot, serverTimestamp, doc, updateDoc, deleteDoc, increment } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
+    // Твои реальные данные из настроек проекта
     const firebaseConfig = {
         apiKey: "AIzaSyAQAwIs7YCU-gb1aeO0xGF78Hnp84auIIg",
         authDomain: "vladidmir-b24a1.firebaseapp.com",
@@ -16,9 +40,9 @@
 
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
-    const colRef = collection(db, "messages");
+    const colRef = collection(db, "messages"); // Работаем с коллекцией messages
 
-    // 1. ФУНКЦИЯ ОТПРАВКИ (была ранее)
+    // 1. Создание (Create)
     window.saveMessage = async function() {
         const name = document.getElementById('userName').value;
         const text = document.getElementById('userText').value;
@@ -29,37 +53,31 @@
         }
     };
 
-    // 2. ФУНКЦИЯ ОБНОВЛЕНИЯ (Лайк) - НОВАЯ
+    // 2. Обновление (Update - Лайк)
     window.addLike = async function(id) {
-        const docRef = doc(db, "messages", id);
-        await updateDoc(docRef, {
-            likes: increment(1) // Атомарно увеличивает счетчик на 1
-        });
+        await updateDoc(doc(db, "messages", id), { likes: increment(1) });
     };
 
-    // 3. ФУНКЦИЯ УДАЛЕНИЯ - НОВАЯ
+    // 3. Удаление (Delete)
     window.deleteMessage = async function(id) {
-        if(confirm("Удалить это сообщение?")) {
-            await deleteDoc(doc(db, "messages", id));
-        }
+        if(confirm("Удалить?")) await deleteDoc(doc(db, "messages", id));
     };
 
-    // ОТОБРАЖЕНИЕ (с новыми кнопками)
-    const q = query(colRef, orderBy("timestamp", "desc"));
-    onSnapshot(q, (snapshot) => {
+    // 4. Чтение (Read - Realtime)
+    onSnapshot(query(colRef, orderBy("timestamp", "desc")), (snapshot) => {
         const list = document.getElementById('messagesList');
         list.innerHTML = '';
-        snapshot.forEach((docSnap) => {
-            const data = docSnap.data();
-            const id = docSnap.id;
+        snapshot.forEach((s) => {
+            const d = s.data();
             list.innerHTML += `
                 <div class="post">
-                    <div class="name">${data.name}</div>
-                    <div class="text">${data.text}</div>
-                    <button onclick="addLike('${id}')">👍 ${data.likes || 0}</button>
-                    <button onclick="deleteMessage('${id}')" style="background:red; margin-left:10px;">Удалить</button>
-                </div>
-            `;
+                    <div class="name">${d.name}</div>
+                    <div class="text">${d.text}</div>
+                    <button onclick="addLike('${s.id}')">👍 ${d.likes || 0}</button>
+                    <button class="btn-red" onclick="deleteMessage('${s.id}')">Удалить</button>
+                </div>`;
         });
     });
 </script>
+</body>
+</html>
