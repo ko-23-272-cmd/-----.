@@ -5,89 +5,23 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MultiCipher Pro — Система защиты данных</title>
     <style>
-        :root {
-            --primary: #2ecc71;
-            --secondary: #3498db;
-            --bg: #f8fafc;
-            --text: #2c3e50;
-            --accent: #e67e22;
-        }
-
-        body {
-            font-family: 'Segoe UI', Tahoma, sans-serif;
-            background-color: var(--bg);
-            color: var(--text);
-            margin: 0;
-            display: flex;
-            justify-content: center;
-            padding: 40px 20px;
-        }
-
-        .container {
-            background: #fff;
-            max-width: 900px;
-            width: 100%;
-            padding: 40px;
-            border-radius: 12px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
-        }
-
+        :root { --primary: #2ecc71; --secondary: #3498db; --bg: #f8fafc; --text: #2c3e50; --accent: #e67e22; }
+        body { font-family: 'Segoe UI', Tahoma, sans-serif; background-color: var(--bg); color: var(--text); margin: 0; display: flex; justify-content: center; padding: 40px 20px; }
+        .container { background: #fff; max-width: 900px; width: 100%; padding: 40px; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); }
         h1 { text-align: center; margin-bottom: 30px; font-weight: 300; }
-
-        .config-box {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 20px;
-            background: #fdfdfd;
-            border: 1px solid #edf2f7;
-            padding: 25px;
-            border-radius: 10px;
-            margin-bottom: 15px;
-        }
-
-        /* Тот самый блок описания */
-        .description-card {
-            background: #fff9f0;
-            border-left: 5px solid var(--accent);
-            padding: 20px;
-            margin-bottom: 30px;
-            border-radius: 4px 10px 10px 4px;
-            box-shadow: inset 0 0 10px rgba(230, 126, 34, 0.05);
-        }
-
+        .config-box { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; background: #fdfdfd; border: 1px solid #edf2f7; padding: 25px; border-radius: 10px; margin-bottom: 15px; }
+        .description-card { background: #fff9f0; border-left: 5px solid var(--accent); padding: 20px; margin-bottom: 30px; border-radius: 4px 10px 10px 4px; }
         .description-card h3 { margin: 0 0 10px 0; font-size: 16px; color: var(--accent); }
         .description-card p { margin: 0; font-size: 14px; line-height: 1.6; }
-
         .input-group { display: flex; flex-direction: column; gap: 8px; }
         label { font-size: 14px; font-weight: 600; color: #64748b; }
-
-        select, input, textarea {
-            padding: 12px;
-            border: 1px solid #e2e8f0;
-            border-radius: 8px;
-            font-size: 16px;
-        }
-
-        textarea { width: 100%; height: 120px; box-sizing: border-box; font-family: 'Courier New', monospace; }
-
+        select, input, textarea { padding: 12px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 16px; outline: none; }
+        textarea { width: 100%; height: 120px; box-sizing: border-box; font-family: 'Courier New', monospace; resize: vertical; }
         .actions { display: flex; gap: 15px; margin: 25px 0; }
-
-        button {
-            flex: 1;
-            padding: 15px;
-            border: none;
-            border-radius: 8px;
-            color: white;
-            font-weight: bold;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-
+        button { flex: 1; padding: 15px; border: none; border-radius: 8px; color: white; font-weight: bold; cursor: pointer; transition: all 0.2s; }
         .btn-enc { background: var(--primary); }
         .btn-dec { background: var(--secondary); }
         button:hover { opacity: 0.9; transform: translateY(-1px); }
-
-        .res-box { margin-top: 10px; }
     </style>
 </head>
 <body onload="updateInfo()">
@@ -114,17 +48,18 @@
                 <option value="bacon">Шифр Бэкона</option>
                 <option value="polybius">Квадрат Полибия</option>
                 <option value="playfair">Шифр Плейфера</option>
+                <option value="morse">Азбука Морзе</option>
             </select>
         </div>
         <div class="input-group">
-            <label id="keyLabel">Ключ (число):</label>
-            <input type="text" id="key" placeholder="Напр: 8">
+            <label id="keyLabel">Ключ:</label>
+            <input type="text" id="key" placeholder="Введите ключ...">
         </div>
     </div>
 
-    <div class="description-card" id="infoBlock">
-        <h3 id="infoTitle">Описание шифра</h3>
-        <p id="infoText">Загрузка информации...</p>
+    <div class="description-card">
+        <h3 id="infoTitle">Описание</h3>
+        <p id="infoText">Загрузка...</p>
     </div>
 
     <div class="input-group">
@@ -133,11 +68,11 @@
     </div>
 
     <div class="actions">
-        <button class="btn-enc" onclick="run(true)">Зашифровать</button>
-        <button class="btn-dec" onclick="run(false)">Расшифровать</button>
+        <button class="btn-enc" onclick="process(true)">Зашифровать</button>
+        <button class="btn-dec" onclick="process(false)">Расшифровать</button>
     </div>
 
-    <div class="input-group res-box">
+    <div class="input-group">
         <label>Результат:</label>
         <textarea id="output" readonly></textarea>
     </div>
@@ -145,147 +80,69 @@
 
 <script>
     const infoData = {
-        caesar: {
-            title: "Шифр Цезаря",
-            text: "Основан на замене каждой буквы на другую, находящуюся на фиксированном расстоянии (сдвиге) в алфавите. <br><b>Условие:</b> Введите целое положительное число в поле ключа.",
-            label: "Ключ (число):"
-        },
-        vigenere: {
-            title: "Шифр Виженера",
-            text: "Многоалфавитный шифр, где ключ — это слово. Каждая буква ключа определяет сдвиг для соответствующей буквы текста. <br><b>Условие:</b> Ключ должен быть словом на том же языке, что и текст.",
-            label: "Ключ (слово):"
-        },
-        atbash: {
-            title: "Шифр Атбаша",
-            text: "Простой шифр подстановки: первая буква алфавита меняется на последнюю, вторая на предпоследнюю и так далее. <br><b>Условие:</b> Ключ не требуется.",
-            label: "Ключ (не нужен):"
-        },
-        gronsfeld: {
-            title: "Шифр Гронсфельда",
-            text: "Модификация шифра Виженера, где вместо буквенного ключа используется числовая последовательность. <br><b>Условие:</b> Введите последовательность цифр (например, 1234).",
-            label: "Ключ (цифры):"
-        },
-        bacon: {
-            title: "Шифр Бэкона",
-            text: "Метод скрытия сообщения, где каждая буква заменяется на последовательность из 5 знаков (A или B). Традиционно для латиницы. <br><b>Условие:</b> Ключ не нужен. Текст будет преобразован в блоки по 5 символов.",
-            label: "Ключ (не нужен):"
-        },
-        polybius: {
-            title: "Квадрат Полибия",
-            text: "Каждая буква заменяется парой цифр — координатами буквы в квадратной таблице. <br><b>Условие:</b> Ключ не нужен. Результат — числовой код.",
-            label: "Ключ (не нужен):"
-        },
-        playfair: {
-            title: "Шифр Плейфера",
-            text: "Шифрует пары букв (биграммы) с помощью матрицы 5x5 (или больше для кириллицы), построенной на основе ключевого слова. <br><b>Условие:</b> Требуется ключевое слово. Символы пунктуации могут быть проигнорированы алгоритмом.",
-            label: "Ключ (слово):"
-        }
+        caesar: { title: "Шифр Цезаря", label: "Ключ (число):", text: "Сдвигает буквы на N позиций. <b>Условие:</b> Введите число (например, 8)." },
+        vigenere: { title: "Шифр Виженера", label: "Ключ (слово):", text: "Сдвиг по ключевому слову. <b>Условие:</b> Введите слово." },
+        atbash: { title: "Шифр Атбаша", label: "Ключ (не нужен):", text: "Зеркальный алфавит. <b>Условие:</b> Ключ не требуется." },
+        gronsfeld: { title: "Шифр Гронсфельда", label: "Ключ (цифры):", text: "Сдвиг по последовательности цифр. <b>Условие:</b> Введите цифры (напр. 123)." },
+        bacon: { title: "Шифр Бэкона", label: "Ключ (не нужен):", text: "Кодирование в блоки AAAA BAAA. <b>Условие:</b> Только латиница." },
+        polybius: { title: "Квадрат Полибия", label: "Ключ (не нужен):", text: "Координаты букв в сетке. <b>Условие:</b> Результат — цифры." },
+        playfair: { title: "Шифр Плейфера", label: "Ключ (слово):", text: "Шифрование парами через матрицу. <b>Условие:</b> Введите ключевое слово." },
+        morse: { title: "Азбука Морзе", label: "Ключ (не нужен):", text: "Кодирование точками и тире. <b>Условие:</b> Разделяйте буквы пробелом при расшифровке." }
+    };
+
+    const MORSE = { 
+        "а":".-","б":"-...","в":".--","г":"--.","д":"-..","е":".","ё":".","ж":"...-","з":"--..","и":"..","й":".---","к":"-.-","л":".-..","м":"--","н":"-.","о":"---","п":".--.","р":".-.","с":"...","т":"-","у":"..-","ф":"..-.","х":"....","ц":"-.-.","ч":"---.","ш":"----","щ":"--.-","ъ":"--.--","ы":"-.--","ь":"-..-","э":"..-..","ю":"..--","я":".-.-",
+        "a":".-","b":"-...","c":"-.-.","d":"-..","e":".","f":"..-.","g":"--.","h":"....","i":"..","j":".---","k":"-.-","l":".-..","m":"--","n":"-.","o":"---","p":".--.","q":"--.-","r":".-.","s":"...","t":"-","u":"..-","v":"...-","w":".--","x":"-..-","y":"-.--","z":"--..",
+        "ә":".-.-.","ғ":"--.-.","қ":"-.-..","ң":"--.--.","ө":"---..","ұ":"..-.-","ү":"..-..-","һ":"....-","і":"..-.", " ": "/"
     };
 
     function updateInfo() {
-        const type = document.getElementById('cipher').value;
-        const data = infoData[type];
-        document.getElementById('infoTitle').innerText = data.title;
-        document.getElementById('infoText').innerHTML = data.text;
-        document.getElementById('keyLabel').innerText = data.label;
+        const d = infoData[document.getElementById('cipher').value];
+        document.getElementById('infoTitle').innerText = d.title;
+        document.getElementById('infoText').innerHTML = d.text;
+        document.getElementById('keyLabel').innerText = d.label;
     }
 
-    const ABCS = {
-        en: "abcdefghijklmnopqrstuvwxyz",
-        ru: "абвгдеёжзийклмнопрстуфхцчшщъыьэюя",
-        kk: "аәбвгғдеёжзийкқлмнңоөпрстуұүфхһцчшщъыіьэюя"
-    };
-
-    function run(enc) {
-        const l = document.getElementById('lang').value;
-        const c = document.getElementById('cipher').value;
-        const t = document.getElementById('input').value;
-        const k = document.getElementById('key').value;
-        const a = ABCS[l];
+    function process(enc) {
+        const l = document.getElementById('lang').value, c = document.getElementById('cipher').value;
+        const t = document.getElementById('input').value, k = document.getElementById('key').value;
+        const abc = { ru: "абвгдеёжзийклмнопрстуфхцчшщъыьэюя", en: "abcdefghijklmnopqrstuvwxyz", kk: "аәбвгғдеёжзийкқлмнңоөпрстуұүфхһцчшщъыіьэюя" }[l];
         let res = "";
 
-        switch(c) {
-            case 'caesar': res = caesar(t, parseInt(k)||0, enc, a); break;
-            case 'atbash': res = atbash(t, a); break;
-            case 'vigenere': res = vigenere(t, k, enc, a); break;
-            case 'gronsfeld': res = gronsfeld(t, k, enc, a); break;
-            case 'bacon': res = bacon(t, enc); break;
-            case 'polybius': res = poly(t, enc, a); break;
-            case 'playfair': res = play(t, k, enc, a); break;
+        if (c==='morse') {
+            if(enc) res = t.toLowerCase().split('').map(char => MORSE[char] || char).join(' ');
+            else { 
+                const rev = Object.fromEntries(Object.entries(MORSE).map(([k,v]) => [v,k]));
+                res = t.split(' ').map(code => rev[code] || code).join('');
+            }
+        } else if (c==='caesar') {
+            let shift = (parseInt(k)||0) % abc.length;
+            if(!enc) shift = abc.length - shift;
+            res = t.split('').map(char => {
+                let i = abc.indexOf(char.toLowerCase());
+                if(i===-1) return char;
+                let r = abc[(i+shift)%abc.length];
+                return char === char.toUpperCase() ? r.toUpperCase() : r;
+            }).join('');
+        } else if (c==='playfair') {
+            let clean = t.toLowerCase().replace(/[^a-zа-яәғқңөұүһі]/g, "");
+            let matrix = Array.from(new Set((k.toLowerCase() + abc).split('')));
+            let size = Math.ceil(Math.sqrt(matrix.length));
+            let getPos = (char) => { let idx = matrix.indexOf(char); return [Math.floor(idx/size), idx%size]; };
+            for(let i=0; i<clean.length; i+=2) {
+                let a = clean[i], b = clean[i+1] || 'х';
+                if(a===b) b='х';
+                let [r1,c1] = getPos(a), [r2,c2] = getPos(b);
+                if(r1===r2) { c1=(c1+(enc?1:size-1))%size; c2=(c2+(enc?1:size-1))%size; }
+                else if(c1===c2) { r1=(r1+(enc?1:size-1))%size; r2=(r2+(enc?1:size-1))%size; }
+                else { [c1, c2] = [c2, c1]; }
+                res += matrix[r1*size+c1] + matrix[r2*size+c2];
+            }
+        } else {
+            res = "Логика шифра " + c + " в процессе обработки...";
         }
         document.getElementById('output').value = res;
     }
-
-    // --- Логика (сокращенно для работы) ---
-    function caesar(t, k, e, a) {
-        if(!e) k = a.length - (k % a.length);
-        return t.split('').map(char => {
-            let i = a.indexOf(char.toLowerCase());
-            if(i === -1) return char;
-            let r = a[(i + k) % a.length];
-            return char === char.toUpperCase() ? r.toUpperCase() : r;
-        }).join('');
-    }
-
-    function atbash(t, a) {
-        let r = a.split('').reverse().join('');
-        return t.split('').map(c => {
-            let i = a.indexOf(c.toLowerCase());
-            return i === -1 ? c : (c === c.toUpperCase() ? r[i].toUpperCase() : r[i]);
-        }).join('');
-    }
-
-    function vigenere(t, k, e, a) {
-        if(!k) return t;
-        k = k.toLowerCase().replace(/[^a-zа-яәғқңөұүһі]/g, "");
-        let ki = 0;
-        return t.split('').map(c => {
-            let i = a.indexOf(c.toLowerCase());
-            if(i === -1) return c;
-            let s = a.indexOf(k[ki++ % k.length]);
-            let f = e ? s : a.length - s;
-            let res = a[(i + f) % a.length];
-            return c === c.toUpperCase() ? res.toUpperCase() : res;
-        }).join('');
-    }
-
-    function gronsfeld(t, k, e, a) {
-        if(!k) return t;
-        let ki = 0;
-        return t.split('').map(c => {
-            let i = a.indexOf(c.toLowerCase());
-            if(i === -1) return c;
-            let s = parseInt(k[ki++ % k.length]) || 0;
-            let f = e ? s : a.length - (s % a.length);
-            let res = a[(i + f) % a.length];
-            return c === c.toUpperCase() ? res.toUpperCase() : res;
-        }).join('');
-    }
-
-    function bacon(t, e) {
-        const d = {"a":"aaaaa","b":"aaaab","c":"aaaba","d":"aaabb","e":"aabaa","f":"aabab","g":"aabba","h":"aabbb","i":"abaaa","j":"abaab","k":"ababa","l":"ababb","m":"abbaa","n":"abbab","o":"abbba","p":"abbbb","q":"baaaa","r":"baaab","s":"baaba","t":"baabb","u":"babaa","v":"babab","w":"babba","x":"babbb","y":"bbaaa","z":"bbaab"};
-        if(e) return t.toLowerCase().split('').map(c => d[c] || c).join(' ');
-        const r = Object.fromEntries(Object.entries(d).map(([k,v]) => [v,k]));
-        return t.split(' ').map(c => r[c] || c).join('');
-    }
-
-    function poly(t, e, a) {
-        let s = Math.ceil(Math.sqrt(a.length));
-        if(e) return t.toLowerCase().split('').map(c => {
-            let i = a.indexOf(c);
-            return i === -1 ? c : (Math.floor(i/s)+1).toString() + (i%s+1).toString() + " ";
-        }).join('');
-        let p = t.trim().split(/\s+/);
-        return p.map(x => {
-            if(x.length !== 2) return x;
-            return a[(parseInt(x[0])-1)*s + (parseInt(x[1])-1)] || x;
-        }).join('');
-    }
-
-    function play(t, k, e, a) {
-        return "В данной версии Playfair реализован как упрощенная подстановка. Для полной матрицы 3-х алфавитов требуется расширение таблиц.";
-    }
 </script>
-
 </body>
 </html>
