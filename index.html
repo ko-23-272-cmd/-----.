@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MultiCipher Pro — Безопасность Данных</title>
+    <title>MultiCipher Pro — Система защиты данных</title>
     <style>
         :root { --primary: #2ecc71; --secondary: #3498db; --bg: #f8fafc; --text: #2c3e50; --accent: #e67e22; }
         body { font-family: 'Segoe UI', Tahoma, sans-serif; background-color: var(--bg); color: var(--text); margin: 0; display: flex; justify-content: center; padding: 40px 20px; }
@@ -27,11 +27,11 @@
 <body onload="updateInfo()">
 
 <div class="container">
-    <h1>MultiCipher Pro — Универсальный инструмент</h1>
+    <h1>MultiCipher Pro — Твой личный криптограф</h1>
 
     <div class="config-box">
         <div class="input-group">
-            <label>Выберите язык:</label>
+            <label>Какой язык?</label>
             <select id="lang" onchange="updateInfo()">
                 <option value="ru">Русский</option>
                 <option value="kk">Қазақша (Казахский)</option>
@@ -39,7 +39,7 @@
             </select>
         </div>
         <div class="input-group">
-            <label>Метод шифрования:</label>
+            <label>Тип шифра:</label>
             <select id="cipher" onchange="updateInfo()">
                 <option value="caesar">Шифр Цезаря</option>
                 <option value="vigenere">Шифр Виженера</option>
@@ -59,17 +59,17 @@
 
     <div class="description-card">
         <h3 id="infoTitle">Описание</h3>
-        <p id="infoText">Загрузка данных...</p>
+        <p id="infoText">Загрузка...</p>
     </div>
 
     <div class="input-group">
         <label>Исходный текст:</label>
-        <textarea id="input" placeholder="Введите текст для обработки..."></textarea>
+        <textarea id="input" placeholder="Введите текст..."></textarea>
     </div>
 
     <div class="actions">
-        <button class="btn-enc" onclick="handle(true)">Зашифровать</button>
-        <button class="btn-dec" onclick="handle(false)">Расшифровать</button>
+        <button class="btn-enc" onclick="process(true)">Зашифровать</button>
+        <button class="btn-dec" onclick="process(false)">Расшифровать</button>
     </div>
 
     <div class="input-group">
@@ -82,21 +82,21 @@
     const alphabets = {
         ru: "абвгдеёжзийклмнопрстуфхцчшщъыьэюя",
         en: "abcdefghijklmnopqrstuvwxyz",
-        kk: "аәбвгғдеёжзийкқлмнңoөпрстуұүфхһцчшщъыіьэюя"
+        kk: "аәбвгғдеёжзийкқлмнңоөпрстуұүфхһцчшщъыіьэюя"
     };
 
     const info = {
-        caesar: { title: "Шифр Цезаря", label: "Сдвиг (число):", text: "Сдвигает буквы по алфавиту. <b>Условие:</b> введите число сдвига." },
-        vigenere: { title: "Шифр Виженера", label: "Ключевое слово:", text: "Использует слово для переменного сдвига. <b>Условие:</b> введите слово на выбранном языке." },
-        atbash: { title: "Шифр Атбаша", label: "Ключ (не нужен):", text: "Зеркальный шифр (А->Я, Б->Ю). <b>Условие:</b> ключ не требуется." },
-        gronsfeld: { title: "Шифр Гронсфельда", label: "Числовой код:", text: "Шифр Виженера, но с цифрами вместо букв. <b>Условие:</b> введите ряд цифр (напр. 123)." },
-        bacon: { title: "Шифр Бэкона", label: "Ключ (не нужен):", text: "Кодирует буквы в блоки 'a' и 'b'. <b>Условие:</b> работает только с латиницей (en)." },
-        polybius: { title: "Квадрат Полибия", label: "Ключ (не нужен):", text: "Буквы заменяются на координаты в таблице. <b>Условие:</b> результат в цифрах." },
-        playfair: { title: "Шифр Плейфера", label: "Слово-ключ:", text: "Шифрует пары букв (биграммы) через матрицу. <b>Условие:</b> введите слово." },
-        morse: { title: "Азбука Морзе", label: "Ключ (не нужен):", text: "Точки и тире. <b>Условие:</b> при расшифровке разделяйте коды букв пробелом." }
+        caesar: { title: "Шифр Цезаря", label: "Сдвиг (число):", text: "Сдвигает буквы на N позиций. <b>Условие:</b> введите число." },
+        vigenere: { title: "Шифр Виженера", label: "Ключевое слово:", text: "Сдвиг по ключевому слову. <b>Условие:</b> введите слово на выбранном языке." },
+        atbash: { title: "Шифр Атбаша", label: "Ключ (не нужен):", text: "Зеркальный алфавит. <b>Условие:</b> ключ не требуется." },
+        gronsfeld: { title: "Шифр Гронсфельда", label: "Числовой ключ:", text: "Сдвиг по последовательности цифр. <b>Условие:</b> введите цифры." },
+        bacon: { title: "Шифр Бэкона", label: "Ключ (не нужен):", text: "Кодирует буквы в блоки 'a' и 'b'. <b>Условие:</b> теперь поддерживает русский и казахский (6-битная версия)." },
+        polybius: { title: "Квадрат Полибия", label: "Ключ (не нужен):", text: "Координаты букв в сетке. <b>Условие:</b> результат в цифрах." },
+        playfair: { title: "Шифр Плейфера", label: "Ключ (слово):", text: "Шифрует пары букв через матрицу. <b>Условие:</b> введите слово." },
+        morse: { title: "Азбука Морзе", label: "Ключ (не нужен):", text: "Точки и тире. <b>Условие:</b> разделяйте буквы пробелом при расшифровке." }
     };
 
-    const morseMap = { "а":".-","б":"-...","в":".--","г":"--.","д":"-..","е":".","ё":".","ж":"...-","з":"--..","и":"..","й":".---","к":"-.-","л":".-..","м":"--","н":"-.","о":"---","п":".--.","р":".-.","с":"...","т":"-","у":"..-","ф":"..-.","х":"....","ц":"-.-.","ч":"---.","ш":"----","щ":"--.-","ъ":"--.--","ы":"-.--","ь":"-..-","э":"..-..","ю":"..--","я":".-.-","a":".-","b":"-...","c":"-.-.","d":"-..","e":".","f":"..-.","g":"--.","h":"....","i":"..","j":".---","k":"-.-","l":".-..","m":"--","n":"-.","o":"---","p":".--.","q":"--.-","r":".-.","s":"...","t":"-","u":"..-","v":"...-","w":".--","x":"-..-","y":"-.--","z":"--..","ә":".-.-.","ғ":"--.-.","қ":"-.-..","ң":"--.--.","ө":"---..","ұ":"..-.-","ү":"..-..-","һ":"....-","і":"..-.","0":"-----","1":".----","2":"..---","3":"...--","4":"....-","5":".....","6":"-....","7":"--...","8":"---..","9":"----."," ":"/" };
+    const morseMap = { "а":".-","б":"-...","в":".--","г":"--.","д":"-..","е":".","ё":".","ж":"...-","з":"--..","и":"..","й":".---","к":"-.-","л":".-..","м":"--","н":"-.","о":"---","п":".--.","р":".-.","с":"...","т":"-","у":"..-","ф":"..-.","х":"....","ц":"-.-.","ч":"---.","ш":"----","щ":"--.-","ъ":"--.--","ы":"-.--","ь":"-..-","э":"..-..","ю":"..--","я":".-.-","a":".-","b":"-...","c":"-.-.","d":"-..","e":".","f":"..-.","g":"--.","h":"....","i":"..","j":".---","k":"-.-","l":".-..","m":"--","n":"-.","o":"---","p":".--.","q":"--.-","r":".-.","s":"...","t":"-","u":"..-","v":"...-","w":".--","x":"-..-","y":"-.--","z":"--..","ә":".-.-.","ғ":"--.-.","қ":"-.-..","ң":"--.--.","ө":"---..","ұ":"..-.-","ү":"..-..-","һ":"....-","і":"..-."," ":"/" };
 
     function updateInfo() {
         const type = document.getElementById('cipher').value;
@@ -105,7 +105,7 @@
         document.getElementById('keyLabel').innerText = info[type].label;
     }
 
-    function handle(isEnc) {
+    function process(isEnc) {
         const lang = document.getElementById('lang').value;
         const type = document.getElementById('cipher').value;
         const txt = document.getElementById('input').value;
@@ -113,106 +113,79 @@
         const abc = alphabets[lang];
         let res = "";
 
-        switch(type) {
-            case 'caesar': 
-                let s = (parseInt(key) || 0) % abc.length;
-                if(!isEnc) s = abc.length - s;
-                res = txt.split('').map(c => {
-                    let i = abc.indexOf(c.toLowerCase());
-                    if(i === -1) return c;
-                    let n = abc[(i + s) % abc.length];
-                    return c === c.toUpperCase() ? n.toUpperCase() : n;
+        if (type === 'bacon') {
+            const bits = lang === 'en' ? 5 : 6;
+            if (isEnc) {
+                res = txt.toLowerCase().split('').map(c => {
+                    let i = abc.indexOf(c);
+                    if (i === -1) return c;
+                    return i.toString(2).padStart(bits, '0').replace(/0/g, 'a').replace(/1/g, 'b');
+                }).join(' ');
+            } else {
+                res = txt.split(' ').map(bin => {
+                    if (!/^[ab]+$/.test(bin)) return bin;
+                    let i = parseInt(bin.replace(/a/g, '0').replace(/b/g, '1'), 2);
+                    return abc[i] || bin;
                 }).join('');
-                break;
-
-            case 'atbash':
-                let rev = abc.split('').reverse().join('');
-                res = txt.split('').map(c => {
-                    let i = abc.indexOf(c.toLowerCase());
-                    if(i === -1) return c;
-                    let n = rev[i];
-                    return c === c.toUpperCase() ? n.toUpperCase() : n;
-                }).join('');
-                break;
-
-            case 'vigenere':
-                if(!key) { res = txt; break; }
-                let vKey = key.toLowerCase().replace(/[^a-zа-яәғқңөұүһі]/g, "");
-                let vIdx = 0;
-                res = txt.split('').map(c => {
-                    let i = abc.indexOf(c.toLowerCase());
-                    if(i === -1) return c;
-                    let shift = abc.indexOf(vKey[vIdx++ % vKey.length]);
-                    if(!isEnc) shift = abc.length - shift;
-                    let n = abc[(i + shift) % abc.length];
-                    return c === c.toUpperCase() ? n.toUpperCase() : n;
-                }).join('');
-                break;
-
-            case 'gronsfeld':
-                if(!key) { res = txt; break; }
-                let gIdx = 0;
-                res = txt.split('').map(c => {
-                    let i = abc.indexOf(c.toLowerCase());
-                    if(i === -1) return c;
-                    let shift = parseInt(key[gIdx++ % key.length]) || 0;
-                    if(!isEnc) shift = abc.length - (shift % abc.length);
-                    let n = abc[(i + shift) % abc.length];
-                    return c === c.toUpperCase() ? n.toUpperCase() : n;
-                }).join('');
-                break;
-
-            case 'morse':
-                if(isEnc) res = txt.toLowerCase().split('').map(c => morseMap[c] ? morseMap[c] + " " : c).join('').trim();
-                else {
-                    const rMorse = Object.fromEntries(Object.entries(morseMap).map(([k,v]) => [v,k]));
-                    res = txt.split(' ').map(c => rMorse[c] || c).join('');
-                }
-                break;
-
-            case 'polybius':
-                let side = Math.ceil(Math.sqrt(abc.length));
-                if(isEnc) {
-                    res = txt.toLowerCase().split('').map(c => {
-                        let i = abc.indexOf(c);
-                        return i === -1 ? c : (Math.floor(i/side)+1).toString() + (i%side+1).toString() + " ";
-                    }).join('').trim();
-                } else {
-                    let codes = txt.trim().split(/\s+/);
-                    res = codes.map(code => {
-                        if(code.length !== 2) return code;
-                        let r = parseInt(code[0])-1, c = parseInt(code[1])-1;
-                        return abc[r * side + c] || code;
-                    }).join('');
-                }
-                break;
-
-            case 'bacon':
-                const bDict = {"a":"aaaaa","b":"aaaab","c":"aaaba","d":"aaabb","e":"aabaa","f":"aabab","g":"aabba","h":"aabbb","i":"abaaa","j":"abaab","k":"ababa","l":"ababb","m":"abbaa","n":"abbab","o":"abbba","p":"abbbb","q":"baaaa","r":"baaab","s":"baaba","t":"baabb","u":"babaa","v":"babab","w":"babba","x":"babbb","y":"bbaaa","z":"bbaab"};
-                if(isEnc) res = txt.toLowerCase().split('').map(c => bDict[c] ? bDict[c] + " " : c).join('').trim();
-                else {
-                    const rBacon = Object.fromEntries(Object.entries(bDict).map(([k,v]) => [v,k]));
-                    res = txt.split(' ').map(c => rBacon[c] || c).join('');
-                }
-                break;
-
-            case 'playfair':
-                let pAbc = abc.replace(/й/g, ""); // Для упрощения убираем 'й', как обычно в Плейфере
-                let mRaw = Array.from(new Set((key.toLowerCase() + pAbc).replace(/[^a-zа-яәғқңөұүһі]/g, "")));
-                let pSide = Math.ceil(Math.sqrt(mRaw.length));
-                let getP = (char) => { let idx = mRaw.indexOf(char); return [Math.floor(idx/pSide), idx%pSide]; };
-                let clean = txt.toLowerCase().replace(/[^a-zа-яәғқңөұүһі]/g, "");
-                for(let i=0; i<clean.length; i+=2) {
-                    let a = clean[i], b = clean[i+1] || 'х';
-                    if(a === b) b = 'х';
-                    let [r1,c1] = getP(a), [r2,c2] = getP(b);
-                    if(r1 === r2) { c1 = (c1+(isEnc?1:pSide-1))%pSide; c2 = (c2+(isEnc?1:pSide-1))%pSide; }
-                    else if(c1 === c2) { r1 = (r1+(isEnc?1:pSide-1))%pSide; r2 = (r2+(isEnc?1:pSide-1))%pSide; }
-                    else { [c1, c2] = [c2, c1]; }
-                    res += mRaw[r1*pSide+c1] + mRaw[r2*pSide+c2];
-                }
-                break;
+            }
+        } 
+        else if (type === 'caesar') {
+            let s = (parseInt(key) || 0) % abc.length;
+            if(!isEnc) s = abc.length - s;
+            res = txt.split('').map(c => {
+                let i = abc.indexOf(c.toLowerCase());
+                if(i===-1) return c;
+                let n = abc[(i+s)%abc.length];
+                return c === c.toUpperCase() ? n.toUpperCase() : n;
+            }).join('');
         }
+        else if (type === 'vigenere') {
+            let vKey = key.toLowerCase().replace(/[^a-zа-яәғқңөұүһі]/g, ""); if(!vKey) return txt; let vI=0;
+            res = txt.split('').map(c => {
+                let i = abc.indexOf(c.toLowerCase()); if(i===-1) return c;
+                let shift = abc.indexOf(vKey[vI++ % vKey.length]); if(!isEnc) shift = abc.length - shift;
+                let n = abc[(i+shift)%abc.length]; return c === c.toUpperCase() ? n.toUpperCase() : n;
+            }).join('');
+        }
+        else if (type === 'atbash') {
+            let rv = abc.split('').reverse().join('');
+            res = txt.split('').map(c => {
+                let i = abc.indexOf(c.toLowerCase()); if(i===-1) return c;
+                let n = rv[i]; return c === c.toUpperCase() ? n.toUpperCase() : n;
+            }).join('');
+        }
+        else if (type === 'gronsfeld') {
+            if(!key) return txt; let gI=0;
+            res = txt.split('').map(c => {
+                let i = abc.indexOf(c.toLowerCase()); if(i===-1) return c;
+                let s = parseInt(key[gI++ % key.length])||0; if(!isEnc) s = abc.length - (s % abc.length);
+                let n = abc[(i+s)%abc.length]; return c === c.toUpperCase() ? n.toUpperCase() : n;
+            }).join('');
+        }
+        else if (type === 'polybius') {
+            let sd = Math.ceil(Math.sqrt(abc.length));
+            if(isEnc) res = txt.toLowerCase().split('').map(c => { let i = abc.indexOf(c); return i===-1?c:(Math.floor(i/sd)+1).toString()+(i%sd+1).toString()+" "; }).join('');
+            else res = txt.trim().split(/\s+/).map(x => abc[(parseInt(x[0])-1)*sd+(parseInt(x[1])-1)] || x).join('');
+        }
+        else if (type === 'playfair') {
+            let m = Array.from(new Set((key.toLowerCase() + abc).replace(/[^a-zа-яәғқңөұүһі]/g, "")));
+            let sd = Math.ceil(Math.sqrt(m.length));
+            let gp = (c) => { let idx = m.indexOf(c); return [Math.floor(idx/sd), idx%sd]; };
+            let cl = txt.toLowerCase().replace(/[^a-zа-яәғқңөұүһі]/g, "");
+            for(let i=0; i<cl.length; i+=2) {
+                let a = cl[i], b = cl[i+1] || 'х'; if(a===b) b='х';
+                let [r1,c1] = gp(a), [r2,c2] = gp(b);
+                if(r1===r2) { c1=(c1+(isEnc?1:sd-1))%sd; c2=(c2+(isEnc?1:sd-1))%sd; }
+                else if(c1===c2) { r1=(r1+(isEnc?1:sd-1))%sd; r2=(r2+(isEnc?1:sd-1))%sd; }
+                else { [c1, c2] = [c2, c1]; }
+                res += m[r1*sd+c1] + m[r2*sd+c2];
+            }
+        }
+        else if (type === 'morse') {
+            if(isEnc) res = txt.toLowerCase().split('').map(c => morseMap[c] ? morseMap[c] + " " : c).join('');
+            else { const rM = Object.fromEntries(Object.entries(morseMap).map(([k,v]) => [v,k])); res = txt.split(' ').map(c => rM[c] || c).join(''); }
+        }
+
         document.getElementById('output').value = res;
     }
 </script>
