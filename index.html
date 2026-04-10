@@ -3,13 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MultiCipher Pro — Твой личный криптограф</title>
+    <title>MultiCipher Pro — Система защиты данных</title>
     <style>
         :root {
             --primary: #2ecc71;
             --secondary: #3498db;
             --bg: #f8fafc;
             --text: #2c3e50;
+            --accent: #e67e22;
         }
 
         body {
@@ -41,8 +42,20 @@
             border: 1px solid #edf2f7;
             padding: 25px;
             border-radius: 10px;
-            margin-bottom: 30px;
+            margin-bottom: 10px;
         }
+
+        .description-box {
+            background: #fff8f0;
+            border-left: 4px solid var(--accent);
+            padding: 15px;
+            margin-bottom: 30px;
+            font-size: 14px;
+            line-height: 1.5;
+            border-radius: 0 8px 8px 0;
+        }
+
+        .description-box b { color: var(--accent); }
 
         .input-group { display: flex; flex-direction: column; gap: 8px; }
         
@@ -102,7 +115,7 @@
         </div>
         <div class="input-group">
             <label>Тип шифра:</label>
-            <select id="cipher">
+            <select id="cipher" onchange="updateDescription()">
                 <option value="caesar">Шифр Цезаря</option>
                 <option value="vigenere">Шифр Виженера</option>
                 <option value="atbash">Шифр Атбаша</option>
@@ -113,9 +126,14 @@
             </select>
         </div>
         <div class="input-group">
-            <label>Ключ (слово или число):</label>
-            <input type="text" id="key" placeholder="Напр: 3 или СЛОВО">
+            <label id="keyLabel">Ключ (число):</label>
+            <input type="text" id="key" placeholder="Введите ключ...">
         </div>
+    </div>
+
+    <div id="desc" class="description-box">
+        <b>О шифре:</b> Каждая буква сдвигается на определенное число позиций в алфавите. <br>
+        <b>Условие:</b> В поле "Ключ" нужно ввести <u>целое число</u> (смещение).
     </div>
 
     <div class="input-group">
@@ -135,6 +153,43 @@
 </div>
 
 <script>
+    const descriptions = {
+        caesar: {
+            text: "<b>О шифре:</b> Каждая буква сдвигается на определенное число позиций в алфавите. <br><b>Условие:</b> В поле 'Ключ' нужно ввести <u>целое число</u>.",
+            label: "Ключ (число):"
+        },
+        vigenere: {
+            text: "<b>О шифре:</b> Шифр использует ключевое слово, где каждая буква слова определяет сдвиг. <br><b>Условие:</b> В поле 'Ключ' нужно ввести <u>слово</u> на выбранном языке.",
+            label: "Ключ (слово):"
+        },
+        atbash: {
+            text: "<b>О шифре:</b> Буквы алфавита заменяются на зеркальные (первая на последнюю и т.д.). <br><b>Условие:</b> Ключ <u>не требуется</u>.",
+            label: "Ключ (не нужен):"
+        },
+        gronsfeld: {
+            text: "<b>О шифре:</b> Похож на Виженера, но сдвиг задается последовательностью цифр. <br><b>Условие:</b> В поле 'Ключ' введите <u>набор цифр</u> (например, 123).",
+            label: "Ключ (цифры):"
+        },
+        bacon: {
+            text: "<b>О шифре:</b> Каждая буква заменяется на уникальный 5-значный код из букв 'A' и 'B'. <br><b>Условие:</b> Ключ <u>не требуется</u>. Работает на базе латиницы.",
+            label: "Ключ (не нужен):"
+        },
+        polybius: {
+            text: "<b>О шифре:</b> Каждая буква заменяется на координаты (строка/столбец) в квадратной таблице. <br><b>Условие:</b> Ключ <u>не требуется</u>.",
+            label: "Ключ (не нужен):"
+        },
+        playfair: {
+            text: "<b>О шифре:</b> Шифрует пары букв (биграммы) с помощью матрицы, построенной по ключу. <br><b>Условие:</b> В поле 'Ключ' нужно ввести <u>слово</u>.",
+            label: "Ключ (слово):"
+        }
+    };
+
+    function updateDescription() {
+        const type = document.getElementById('cipher').value;
+        document.getElementById('desc').innerHTML = descriptions[type].text;
+        document.getElementById('keyLabel').innerText = descriptions[type].label;
+    }
+
     const ALPHABETS = {
         en: "abcdefghijklmnopqrstuvwxyz",
         ru: "абвгдеёжзийклмнопрстуфхцчшщъыьэюя",
@@ -149,7 +204,6 @@
         const abc = ALPHABETS[lang];
         
         let result = "";
-
         switch(type) {
             case 'caesar': result = caesar(text, parseInt(key) || 0, isEnc, abc); break;
             case 'atbash': result = atbash(text, abc); break;
@@ -161,8 +215,6 @@
         }
         document.getElementById('output').value = result;
     }
-
-    // --- АЛГОРИТМЫ ---
 
     function caesar(t, k, e, a) {
         if (!e) k = a.length - (k % a.length);
@@ -233,35 +285,20 @@
     }
 
     function playfair(t, k, e, a) {
-        // Упрощенная логика Плейфера для разных алфавитов
         let matrix = Array.from(new Set((k.toLowerCase() + a).replace(/[^a-zа-яәғқңөұүһі]/g, "")));
         const size = Math.ceil(Math.sqrt(a.length));
-        
-        const getPos = (c) => {
-            const idx = matrix.indexOf(c);
-            return idx === -1 ? null : [Math.floor(idx/size), idx%size];
-        };
-
-        let processedText = t.toLowerCase().replace(/[^a-zа-яәғқңөұүһі]/g, "");
+        const getPos = (c) => { const idx = matrix.indexOf(c); return idx === -1 ? null : [Math.floor(idx/size), idx%size]; };
+        let proc = t.toLowerCase().replace(/[^a-zа-яәғқңөұүһі]/g, "");
         let final = "";
-        for(let i=0; i<processedText.length; i+=2) {
-            let a = processedText[i], b = processedText[i+1] || 'х';
+        for(let i=0; i<proc.length; i+=2) {
+            let a = proc[i], b = proc[i+1] || 'х';
             if(a === b) b = 'х';
             let p1 = getPos(a), p2 = getPos(b);
-            if(!p1 || !p2) { final += a + b; continue; }
+            if(!p1 || !p2) continue;
             let r1, c1, r2, c2;
-            if(p1[0] === p2[0]) { // Row
-                c1 = (p1[1] + (e?1:size-1)) % size;
-                c2 = (p2[1] + (e?1:size-1)) % size;
-                r1 = p1[0]; r2 = p2[0];
-            } else if(p1[1] === p2[1]) { // Col
-                r1 = (p1[0] + (e?1:size-1)) % size;
-                r2 = (p2[0] + (e?1:size-1)) % size;
-                c1 = p1[1]; c2 = p2[1];
-            } else { // Rect
-                r1 = p1[0]; c1 = p2[1];
-                r2 = p2[0]; c2 = p1[1];
-            }
+            if(p1[0] === p2[0]) { c1 = (p1[1] + (e?1:size-1)) % size; c2 = (p2[1] + (e?1:size-1)) % size; r1 = p1[0]; r2 = p2[0]; }
+            else if(p1[1] === p2[1]) { r1 = (p1[0] + (e?1:size-1)) % size; r2 = (p2[0] + (e?1:size-1)) % size; c1 = p1[1]; c2 = p2[1]; }
+            else { r1 = p1[0]; c1 = p2[1]; r2 = p2[0]; c2 = p1[1]; }
             final += matrix[r1*size + c1] + matrix[r2*size + c2];
         }
         return final;
