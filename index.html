@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MultiCipher Pro — Твой личный криптограф</title>
+    <title>MultiCipher Pro — Безопасность Данных</title>
     <style>
         :root { --primary: #2ecc71; --secondary: #3498db; --bg: #f8fafc; --text: #2c3e50; --accent: #e67e22; }
         body { font-family: 'Segoe UI', Tahoma, sans-serif; background-color: var(--bg); color: var(--text); margin: 0; display: flex; justify-content: center; padding: 40px 20px; }
@@ -27,19 +27,19 @@
 <body onload="updateInfo()">
 
 <div class="container">
-    <h1>Здравствуйте! Что будем шифровать или расшифровывать?</h1>
+    <h1>MultiCipher Pro — Универсальный инструмент</h1>
 
     <div class="config-box">
         <div class="input-group">
-            <label>Какой язык?</label>
-            <select id="lang">
+            <label>Выберите язык:</label>
+            <select id="lang" onchange="updateInfo()">
                 <option value="ru">Русский</option>
                 <option value="kk">Қазақша (Казахский)</option>
                 <option value="en">English</option>
             </select>
         </div>
         <div class="input-group">
-            <label>Тип шифра:</label>
+            <label>Метод шифрования:</label>
             <select id="cipher" onchange="updateInfo()">
                 <option value="caesar">Шифр Цезаря</option>
                 <option value="vigenere">Шифр Виженера</option>
@@ -59,17 +59,17 @@
 
     <div class="description-card">
         <h3 id="infoTitle">Описание</h3>
-        <p id="infoText">Загрузка...</p>
+        <p id="infoText">Загрузка данных...</p>
     </div>
 
     <div class="input-group">
-        <label>Введите слово или предложение:</label>
-        <textarea id="input" placeholder="Введите текст..."></textarea>
+        <label>Исходный текст:</label>
+        <textarea id="input" placeholder="Введите текст для обработки..."></textarea>
     </div>
 
     <div class="actions">
-        <button class="btn-enc" onclick="process(true)">Зашифровать</button>
-        <button class="btn-dec" onclick="process(false)">Расшифровать</button>
+        <button class="btn-enc" onclick="handle(true)">Зашифровать</button>
+        <button class="btn-dec" onclick="handle(false)">Расшифровать</button>
     </div>
 
     <div class="input-group">
@@ -79,78 +79,139 @@
 </div>
 
 <script>
-    const infoData = {
-        caesar: { title: "Шифр Цезаря", label: "Ключ (число):", text: "Сдвигает буквы на N позиций. <br><b>Условие:</b> Введите число (например, 8)." },
-        vigenere: { title: "Шифр Виженера", label: "Ключ (слово):", text: "Многоалфавитный шифр, использующий слово-ключ. <br><b>Условие:</b> Введите слово на выбранном языке." },
-        atbash: { title: "Шифр Атбаша", label: "Ключ (не нужен):", text: "Зеркальный шифр: первая буква алфавита меняется на последнюю. <br><b>Условие:</b> Ключ не нужен." },
-        gronsfeld: { title: "Шифр Гронсфельда", label: "Ключ (цифры):", text: "Сдвиг по последовательности цифр. <br><b>Условие:</b> Введите цифры (напр. 123)." },
-        bacon: { title: "Шифр Бэкона", label: "Ключ (не нужен):", text: "Заменяет буквы на 5-значные блоки из A и B. <br><b>Условие:</b> Только латиница." },
-        polybius: { title: "Квадрат Полибия", label: "Ключ (не нужен):", text: "Заменяет буквы на координаты в сетке алфавита. <br><b>Условие:</b> Ключ не нужен." },
-        playfair: { title: "Шифр Плейфера", label: "Ключ (слово):", text: "Шифрует пары букв через матрицу символов. <br><b>Условие:</b> Введите ключевое слово." },
-        morse: { title: "Азбука Морзе", label: "Ключ (не нужен):", text: "Кодирует символы точками и тире. <br><b>Условие:</b> При расшифровке разделяйте буквы пробелом." }
-    };
-
-    const MORSE = { "а":".-","б":"-...","в":".--","г":"--.","д":"-..","е":".","ё":".","ж":"...-","з":"--..","и":"..","й":".---","к":"-.-","л":".-..","м":"--","н":"-.","о":"---","п":".--.","р":".-.","с":"...","т":"-","у":"..-","ф":"..-.","х":"....","ц":"-.-.","ч":"---.","ш":"----","щ":"--.-","ъ":"--.--","ы":"-.--","ь":"-..-","э":"..-..","ю":"..--","я":".-.-","a":".-","b":"-...","c":"-.-.","d":"-..","e":".","f":"..-.","g":"--.","h":"....","i":"..","j":".---","k":"-.-","l":".-..","m":"--","n":"-.","o":"---","p":".--.","q":"--.-","r":".-.","s":"...","t":"-","u":"..-","v":"...-","w":".--","x":"-..-","y":"-.--","z":"--..","ә":".-.-.","ғ":"--.-.","қ":"-.-..","ң":"--.--.","ө":"---..","ұ":"..-.-","ү":"..-..-","һ":"....-","і":"..-."," ":"/" };
-
-    const ABCS = {
+    const alphabets = {
         ru: "абвгдеёжзийклмнопрстуфхцчшщъыьэюя",
         en: "abcdefghijklmnopqrstuvwxyz",
-        kk: "аәбвгғдеёжзийкқлмнңоөпрстуұүфхһцчшщъыіьэюя"
+        kk: "аәбвгғдеёжзийкқлмнңoөпрстуұүфхһцчшщъыіьэюя"
     };
 
+    const info = {
+        caesar: { title: "Шифр Цезаря", label: "Сдвиг (число):", text: "Сдвигает буквы по алфавиту. <b>Условие:</b> введите число сдвига." },
+        vigenere: { title: "Шифр Виженера", label: "Ключевое слово:", text: "Использует слово для переменного сдвига. <b>Условие:</b> введите слово на выбранном языке." },
+        atbash: { title: "Шифр Атбаша", label: "Ключ (не нужен):", text: "Зеркальный шифр (А->Я, Б->Ю). <b>Условие:</b> ключ не требуется." },
+        gronsfeld: { title: "Шифр Гронсфельда", label: "Числовой код:", text: "Шифр Виженера, но с цифрами вместо букв. <b>Условие:</b> введите ряд цифр (напр. 123)." },
+        bacon: { title: "Шифр Бэкона", label: "Ключ (не нужен):", text: "Кодирует буквы в блоки 'a' и 'b'. <b>Условие:</b> работает только с латиницей (en)." },
+        polybius: { title: "Квадрат Полибия", label: "Ключ (не нужен):", text: "Буквы заменяются на координаты в таблице. <b>Условие:</b> результат в цифрах." },
+        playfair: { title: "Шифр Плейфера", label: "Слово-ключ:", text: "Шифрует пары букв (биграммы) через матрицу. <b>Условие:</b> введите слово." },
+        morse: { title: "Азбука Морзе", label: "Ключ (не нужен):", text: "Точки и тире. <b>Условие:</b> при расшифровке разделяйте коды букв пробелом." }
+    };
+
+    const morseMap = { "а":".-","б":"-...","в":".--","г":"--.","д":"-..","е":".","ё":".","ж":"...-","з":"--..","и":"..","й":".---","к":"-.-","л":".-..","м":"--","н":"-.","о":"---","п":".--.","р":".-.","с":"...","т":"-","у":"..-","ф":"..-.","х":"....","ц":"-.-.","ч":"---.","ш":"----","щ":"--.-","ъ":"--.--","ы":"-.--","ь":"-..-","э":"..-..","ю":"..--","я":".-.-","a":".-","b":"-...","c":"-.-.","d":"-..","e":".","f":"..-.","g":"--.","h":"....","i":"..","j":".---","k":"-.-","l":".-..","m":"--","n":"-.","o":"---","p":".--.","q":"--.-","r":".-.","s":"...","t":"-","u":"..-","v":"...-","w":".--","x":"-..-","y":"-.--","z":"--..","ә":".-.-.","ғ":"--.-.","қ":"-.-..","ң":"--.--.","ө":"---..","ұ":"..-.-","ү":"..-..-","һ":"....-","і":"..-.","0":"-----","1":".----","2":"..---","3":"...--","4":"....-","5":".....","6":"-....","7":"--...","8":"---..","9":"----."," ":"/" };
+
     function updateInfo() {
-        const d = infoData[document.getElementById('cipher').value];
-        document.getElementById('infoTitle').innerText = d.title;
-        document.getElementById('infoText').innerHTML = d.text;
-        document.getElementById('keyLabel').innerText = d.label;
+        const type = document.getElementById('cipher').value;
+        document.getElementById('infoTitle').innerText = info[type].title;
+        document.getElementById('infoText').innerHTML = info[type].text;
+        document.getElementById('keyLabel').innerText = info[type].label;
     }
 
-    function process(enc) {
-        const l = document.getElementById('lang').value, c = document.getElementById('cipher').value;
-        const t = document.getElementById('input').value, k = document.getElementById('key').value, a = ABCS[l];
+    function handle(isEnc) {
+        const lang = document.getElementById('lang').value;
+        const type = document.getElementById('cipher').value;
+        const txt = document.getElementById('input').value;
+        const key = document.getElementById('key').value;
+        const abc = alphabets[lang];
         let res = "";
 
-        if (c === 'morse') {
-            if(enc) res = t.toLowerCase().split('').map(char => MORSE[char] || char).join(' ');
-            else { const r = Object.fromEntries(Object.entries(MORSE).map(([k,v]) => [v,k])); res = t.split(' ').map(cd => r[cd] || cd).join(''); }
-        } 
-        else if (c === 'caesar') {
-            let s = (parseInt(k)||0) % a.length; if(!enc) s = a.length - s;
-            res = t.split('').map(ch => { let i = a.indexOf(ch.toLowerCase()); if(i===-1) return ch; let r = a[(i+s)%a.length]; return ch===ch.toUpperCase()?r.toUpperCase():r; }).join('');
-        }
-        else if (c === 'atbash') {
-            let rv = a.split('').reverse().join('');
-            res = t.split('').map(ch => { let i = a.indexOf(ch.toLowerCase()); if(i===-1) return ch; return ch===ch.toUpperCase()?rv[i].toUpperCase():rv[i]; }).join('');
-        }
-        else if (c === 'vigenere') {
-            let kw = k.toLowerCase().replace(/[^a-zа-яәғқңөұүһі]/g, ""); if(!kw) return t; let ki=0;
-            res = t.split('').map(ch => { let i = a.indexOf(ch.toLowerCase()); if(i===-1) return ch; let sh = a.indexOf(kw[ki++%kw.length]), f = enc?sh:a.length-sh; let r = a[(i+f)%a.length]; return ch===ch.toUpperCase()?r.toUpperCase():r; }).join('');
-        }
-        else if (c === 'gronsfeld') {
-            if(!k) return t; let ki=0;
-            res = t.split('').map(ch => { let i = a.indexOf(ch.toLowerCase()); if(i===-1) return ch; let sh = parseInt(k[ki++%k.length])||0, f = enc?sh:a.length-(sh%a.length); let r = a[(i+f)%a.length]; return ch===ch.toUpperCase()?r.toUpperCase():r; }).join('');
-        }
-        else if (c === 'bacon') {
-            const d = {"a":"aaaaa","b":"aaaab","c":"aaaba","d":"aaabb","e":"aabaa","f":"aabab","g":"aabba","h":"aabbb","i":"abaaa","j":"abaab","k":"ababa","l":"ababb","m":"abbaa","n":"abbab","o":"abbba","p":"abbbb","q":"baaaa","r":"baaab","s":"baaba","t":"baabb","u":"babaa","v":"babab","w":"babba","x":"babbb","y":"bbaaa","z":"bbaab"};
-            if(enc) res = t.toLowerCase().split('').map(ch => d[ch] || ch).join(' ');
-            else { const r = Object.fromEntries(Object.entries(d).map(([k,v]) => [v,k])); res = t.split(' ').map(cd => r[cd] || cd).join(''); }
-        }
-        else if (c === 'polybius') {
-            let sz = Math.ceil(Math.sqrt(a.length));
-            if(enc) res = t.toLowerCase().split('').map(ch => { let i = a.indexOf(ch); return i===-1?ch:(Math.floor(i/sz)+1).toString()+(i%sz+1).toString()+" "; }).join('');
-            else { res = t.trim().split(/\s+/).map(x => a[(parseInt(x[0])-1)*sz+(parseInt(x[1])-1)] || x).join(''); }
-        }
-        else if (c === 'playfair') {
-            let cl = t.toLowerCase().replace(/[^a-zа-яәғқңөұүһі]/g, "");
-            let m = Array.from(new Set((k.toLowerCase() + a).split(''))); let sz = Math.ceil(Math.sqrt(m.length));
-            let gp = (ch) => { let idx = m.indexOf(ch); return [Math.floor(idx/sz), idx%sz]; };
-            for(let i=0; i<cl.length; i+=2) {
-                let a1=cl[i], a2=cl[i+1]||'х'; if(a1===a2) a2='х'; let [r1,c1]=gp(a1), [r2,c2]=gp(a2);
-                if(r1===r2) { c1=(c1+(enc?1:sz-1))%sz; c2=(c2+(enc?1:sz-1))%sz; }
-                else if(c1===c2) { r1=(r1+(enc?1:sz-1))%sz; r2=(r2+(enc?1:sz-1))%sz; }
-                else { [c1, c2] = [c2, c1]; }
-                res += m[r1*sz+c1] + m[r2*sz+c2];
-            }
+        switch(type) {
+            case 'caesar': 
+                let s = (parseInt(key) || 0) % abc.length;
+                if(!isEnc) s = abc.length - s;
+                res = txt.split('').map(c => {
+                    let i = abc.indexOf(c.toLowerCase());
+                    if(i === -1) return c;
+                    let n = abc[(i + s) % abc.length];
+                    return c === c.toUpperCase() ? n.toUpperCase() : n;
+                }).join('');
+                break;
+
+            case 'atbash':
+                let rev = abc.split('').reverse().join('');
+                res = txt.split('').map(c => {
+                    let i = abc.indexOf(c.toLowerCase());
+                    if(i === -1) return c;
+                    let n = rev[i];
+                    return c === c.toUpperCase() ? n.toUpperCase() : n;
+                }).join('');
+                break;
+
+            case 'vigenere':
+                if(!key) { res = txt; break; }
+                let vKey = key.toLowerCase().replace(/[^a-zа-яәғқңөұүһі]/g, "");
+                let vIdx = 0;
+                res = txt.split('').map(c => {
+                    let i = abc.indexOf(c.toLowerCase());
+                    if(i === -1) return c;
+                    let shift = abc.indexOf(vKey[vIdx++ % vKey.length]);
+                    if(!isEnc) shift = abc.length - shift;
+                    let n = abc[(i + shift) % abc.length];
+                    return c === c.toUpperCase() ? n.toUpperCase() : n;
+                }).join('');
+                break;
+
+            case 'gronsfeld':
+                if(!key) { res = txt; break; }
+                let gIdx = 0;
+                res = txt.split('').map(c => {
+                    let i = abc.indexOf(c.toLowerCase());
+                    if(i === -1) return c;
+                    let shift = parseInt(key[gIdx++ % key.length]) || 0;
+                    if(!isEnc) shift = abc.length - (shift % abc.length);
+                    let n = abc[(i + shift) % abc.length];
+                    return c === c.toUpperCase() ? n.toUpperCase() : n;
+                }).join('');
+                break;
+
+            case 'morse':
+                if(isEnc) res = txt.toLowerCase().split('').map(c => morseMap[c] ? morseMap[c] + " " : c).join('').trim();
+                else {
+                    const rMorse = Object.fromEntries(Object.entries(morseMap).map(([k,v]) => [v,k]));
+                    res = txt.split(' ').map(c => rMorse[c] || c).join('');
+                }
+                break;
+
+            case 'polybius':
+                let side = Math.ceil(Math.sqrt(abc.length));
+                if(isEnc) {
+                    res = txt.toLowerCase().split('').map(c => {
+                        let i = abc.indexOf(c);
+                        return i === -1 ? c : (Math.floor(i/side)+1).toString() + (i%side+1).toString() + " ";
+                    }).join('').trim();
+                } else {
+                    let codes = txt.trim().split(/\s+/);
+                    res = codes.map(code => {
+                        if(code.length !== 2) return code;
+                        let r = parseInt(code[0])-1, c = parseInt(code[1])-1;
+                        return abc[r * side + c] || code;
+                    }).join('');
+                }
+                break;
+
+            case 'bacon':
+                const bDict = {"a":"aaaaa","b":"aaaab","c":"aaaba","d":"aaabb","e":"aabaa","f":"aabab","g":"aabba","h":"aabbb","i":"abaaa","j":"abaab","k":"ababa","l":"ababb","m":"abbaa","n":"abbab","o":"abbba","p":"abbbb","q":"baaaa","r":"baaab","s":"baaba","t":"baabb","u":"babaa","v":"babab","w":"babba","x":"babbb","y":"bbaaa","z":"bbaab"};
+                if(isEnc) res = txt.toLowerCase().split('').map(c => bDict[c] ? bDict[c] + " " : c).join('').trim();
+                else {
+                    const rBacon = Object.fromEntries(Object.entries(bDict).map(([k,v]) => [v,k]));
+                    res = txt.split(' ').map(c => rBacon[c] || c).join('');
+                }
+                break;
+
+            case 'playfair':
+                let pAbc = abc.replace(/й/g, ""); // Для упрощения убираем 'й', как обычно в Плейфере
+                let mRaw = Array.from(new Set((key.toLowerCase() + pAbc).replace(/[^a-zа-яәғқңөұүһі]/g, "")));
+                let pSide = Math.ceil(Math.sqrt(mRaw.length));
+                let getP = (char) => { let idx = mRaw.indexOf(char); return [Math.floor(idx/pSide), idx%pSide]; };
+                let clean = txt.toLowerCase().replace(/[^a-zа-яәғқңөұүһі]/g, "");
+                for(let i=0; i<clean.length; i+=2) {
+                    let a = clean[i], b = clean[i+1] || 'х';
+                    if(a === b) b = 'х';
+                    let [r1,c1] = getP(a), [r2,c2] = getP(b);
+                    if(r1 === r2) { c1 = (c1+(isEnc?1:pSide-1))%pSide; c2 = (c2+(isEnc?1:pSide-1))%pSide; }
+                    else if(c1 === c2) { r1 = (r1+(isEnc?1:pSide-1))%pSide; r2 = (r2+(isEnc?1:pSide-1))%pSide; }
+                    else { [c1, c2] = [c2, c1]; }
+                    res += mRaw[r1*pSide+c1] + mRaw[r2*pSide+c2];
+                }
+                break;
         }
         document.getElementById('output').value = res;
     }
