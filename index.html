@@ -221,52 +221,77 @@
                 }).join('');
             }
         }
-        else if (type === 'playfair') {
-            // Создаем матрицу на основе алфавита и ключа
-            let m = Array.from(new Set((key.toLowerCase() + abc).replace(new RegExp(`[^${abc}]`, 'g'), "")));
-            let sd = Math.ceil(Math.sqrt(m.length));
-            let gp = (c) => { let idx = m.indexOf(c); return [Math.floor(idx / sd), idx % sd]; };
-            
-            let cl = txt.toLowerCase().replace(new RegExp(`[^${abc}]`, 'g'), "");
-            if (!isEnc) {
-                // При расшифровке просто работаем с парами
+       else if (type === 'playfair') {
+            let currentAbc = abc;
+            let sd;
+            let padChar; // Символ-заполнитель для создания пар
+
+            // Настройка сетки и алфавита под конкретный язык
+            if (lang === 'en') {
+                sd = 5;
+                padChar = 'x';
+                // Традиционно J заменяется на I
+                currentAbc = "abcdefghiklmnopqrstuvwxyz";
+            } else if (lang === 'ru') {
+                sd = 6;
+                padChar = 'х';
+                currentAbc = "абвгдеёжзийклмнопрстуфхцчшщъыьэюя";
             } else {
-                // При шифровании готовим биграммы
-                let temp = "";
-                for(let i=0; i<cl.length; i++) {
-                    temp += cl[i];
-                    if(i + 1 < cl.length && cl[i] === cl[i+1]) temp += (lang === 'en' ? 'x' : 'х');
-                }
-                if(temp.length % 2 !== 0) temp += (lang === 'en' ? 'x' : 'х');
-                cl = temp;
+                sd = 7;
+                padChar = 'х';
+                currentAbc = "аәбвгғдеёжзийкқлмнңоөпрстуұүфхһцчшщъыіьэюя";
             }
 
-            for (let i = 0; i < cl.length; i += 2) {
-                let a = cl[i], b = cl[i + 1];
-                let [r1, c1] = gp(a), [r2, c2] = gp(b);
-                if (r1 === r2) {
+            // 1. Создаем уникальную матрицу на основе ключа
+            let keyClean = (key.toLowerCase() + currentAbc).replace(new RegExp(`[^${currentAbc}]`, 'g'), "");
+            let matrix = Array.from(new Set(keyClean)); // Убираем дубликаты
+
+            let getPos = (char) => {
+                let idx = matrix.indexOf(char);
+                return [Math.floor(idx / sd), idx % sd];
+            };
+
+            // 2. Подготовка текста
+            let inputTxt = txt.toLowerCase();
+            if (lang === 'en') inputTxt = inputTxt.replace(/j/g, "i");
+            inputTxt = inputTxt.replace(new RegExp(`[^${currentAbc}]`, 'g'), "");
+
+            let prepared = "";
+            if (isEnc) {
+                for (let i = 0; i < inputTxt.length; i++) {
+                    prepared += inputTxt[i];
+                    if (i + 1 < inputTxt.length) {
+                        if (inputTxt[i] === inputTxt[i+1]) {
+                            prepared += padChar; // Если буквы в паре одинаковые, вставляем 'x'
+                        } else {
+                            prepared += inputTxt[++i];
+                        }
+                    }
+                }
+                if (prepared.length % 2 !== 0) prepared += padChar; // Должно быть четное число
+            } else {
+                prepared = inputTxt;
+            }
+
+            // 3. Шифрование / Расшифровка
+            for (let i = 0; i < prepared.length; i += 2) {
+                let [r1, c1] = getPos(prepared[i]);
+                let [r2, c2] = getPos(prepared[i+1]);
+
+                if (r1 === r2) { // В одной строке
                     c1 = (c1 + (isEnc ? 1 : sd - 1)) % sd;
                     c2 = (c2 + (isEnc ? 1 : sd - 1)) % sd;
-                } else if (c1 === c2) {
+                } else if (c1 === c2) { // В одном столбце
                     r1 = (r1 + (isEnc ? 1 : sd - 1)) % sd;
                     r2 = (r2 + (isEnc ? 1 : sd - 1)) % sd;
-                } else {
-                    [c1, c2] = [c2, c1];
+                } else { // Прямоугольник
+                    let temp = c1;
+                    c1 = c2;
+                    c2 = temp;
                 }
-                res += m[r1 * sd + c1] + m[r2 * sd + c2];
+                res += matrix[r1 * sd + c1] + matrix[r2 * sd + c2];
             }
         }
-        else if (type === 'morse') {
-            if (isEnc) {
-                res = txt.toLowerCase().split('').map(c => morseMap[c] ? morseMap[c] : c).join(' ');
-            } else {
-                const rM = Object.fromEntries(Object.entries(morseMap).map(([k, v]) => [v, k]));
-                res = txt.trim().split(/\s+/).map(c => rM[c] || c).join('');
-            }
-        }
-
-        document.getElementById('output').value = res;
-    }
 </script>
 </body>
 </html>
