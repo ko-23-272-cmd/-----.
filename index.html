@@ -122,68 +122,115 @@
                     return i.toString(2).padStart(bits, '0').replace(/0/g, 'a').replace(/1/g, 'b');
                 }).join(' ');
             } else {
-                res = txt.split(' ').map(bin => {
+                res = txt.trim().split(/\s+/).map(bin => {
                     if (!/^[ab]+$/.test(bin)) return bin;
                     let i = parseInt(bin.replace(/a/g, '0').replace(/b/g, '1'), 2);
-                    return abc[i] || bin;
+                    return abc[i] || "?";
                 }).join('');
             }
         } 
         else if (type === 'caesar') {
-            let s = (parseInt(key) || 0) % abc.length;
-            if(!isEnc) s = abc.length - s;
+            let s = parseInt(key) || 0;
+            if (!isEnc) s = abc.length - (s % abc.length);
             res = txt.split('').map(c => {
                 let i = abc.indexOf(c.toLowerCase());
-                if(i===-1) return c;
-                let n = abc[(i+s)%abc.length];
+                if (i === -1) return c;
+                let n = abc[(i + s) % abc.length];
                 return c === c.toUpperCase() ? n.toUpperCase() : n;
             }).join('');
         }
         else if (type === 'vigenere') {
-            let vKey = key.toLowerCase().replace(/[^a-zа-яәғқңөұүһі]/g, ""); if(!vKey) return txt; let vI=0;
+            let vKey = key.toLowerCase().replace(new RegExp(`[^${abc}]`, 'g'), ""); 
+            if (!vKey) return document.getElementById('output').value = txt;
+            let vI = 0;
             res = txt.split('').map(c => {
-                let i = abc.indexOf(c.toLowerCase()); if(i===-1) return c;
-                let shift = abc.indexOf(vKey[vI++ % vKey.length]); if(!isEnc) shift = abc.length - shift;
-                let n = abc[(i+shift)%abc.length]; return c === c.toUpperCase() ? n.toUpperCase() : n;
+                let i = abc.indexOf(c.toLowerCase());
+                if (i === -1) return c;
+                let shift = abc.indexOf(vKey[vI++ % vKey.length]);
+                if (!isEnc) shift = abc.length - shift;
+                let n = abc[(i + shift) % abc.length];
+                return c === c.toUpperCase() ? n.toUpperCase() : n;
             }).join('');
         }
         else if (type === 'atbash') {
             let rv = abc.split('').reverse().join('');
             res = txt.split('').map(c => {
-                let i = abc.indexOf(c.toLowerCase()); if(i===-1) return c;
-                let n = rv[i]; return c === c.toUpperCase() ? n.toUpperCase() : n;
+                let i = abc.indexOf(c.toLowerCase());
+                if (i === -1) return c;
+                let n = rv[i];
+                return c === c.toUpperCase() ? n.toUpperCase() : n;
             }).join('');
         }
         else if (type === 'gronsfeld') {
-            if(!key) return txt; let gI=0;
+            let gKey = key.replace(/\D/g, "");
+            if (!gKey) return document.getElementById('output').value = txt;
+            let gI = 0;
             res = txt.split('').map(c => {
-                let i = abc.indexOf(c.toLowerCase()); if(i===-1) return c;
-                let s = parseInt(key[gI++ % key.length])||0; if(!isEnc) s = abc.length - (s % abc.length);
-                let n = abc[(i+s)%abc.length]; return c === c.toUpperCase() ? n.toUpperCase() : n;
+                let i = abc.indexOf(c.toLowerCase());
+                if (i === -1) return c;
+                let s = parseInt(gKey[gI++ % gKey.length]);
+                if (!isEnc) s = abc.length - (s % abc.length);
+                let n = abc[(i + s) % abc.length];
+                return c === c.toUpperCase() ? n.toUpperCase() : n;
             }).join('');
         }
         else if (type === 'polybius') {
             let sd = Math.ceil(Math.sqrt(abc.length));
-            if(isEnc) res = txt.toLowerCase().split('').map(c => { let i = abc.indexOf(c); return i===-1?c:(Math.floor(i/sd)+1).toString()+(i%sd+1).toString()+" "; }).join('');
-            else res = txt.trim().split(/\s+/).map(x => abc[(parseInt(x[0])-1)*sd+(parseInt(x[1])-1)] || x).join('');
+            if (isEnc) {
+                res = txt.toLowerCase().split('').map(c => {
+                    let i = abc.indexOf(c);
+                    return i === -1 ? c : (Math.floor(i / sd) + 1).toString() + (i % sd + 1).toString() + " ";
+                }).join('').trim();
+            } else {
+                res = txt.trim().split(/\s+/).map(x => {
+                    if (x.length !== 2) return x;
+                    let r = parseInt(x[0]) - 1, c = parseInt(x[1]) - 1;
+                    return abc[r * sd + c] || x;
+                }).join('');
+            }
         }
         else if (type === 'playfair') {
-            let m = Array.from(new Set((key.toLowerCase() + abc).replace(/[^a-zа-яәғқңөұүһі]/g, "")));
+            // Создаем матрицу на основе алфавита и ключа
+            let m = Array.from(new Set((key.toLowerCase() + abc).replace(new RegExp(`[^${abc}]`, 'g'), "")));
             let sd = Math.ceil(Math.sqrt(m.length));
-            let gp = (c) => { let idx = m.indexOf(c); return [Math.floor(idx/sd), idx%sd]; };
-            let cl = txt.toLowerCase().replace(/[^a-zа-яәғқңөұүһі]/g, "");
-            for(let i=0; i<cl.length; i+=2) {
-                let a = cl[i], b = cl[i+1] || 'х'; if(a===b) b='х';
-                let [r1,c1] = gp(a), [r2,c2] = gp(b);
-                if(r1===r2) { c1=(c1+(isEnc?1:sd-1))%sd; c2=(c2+(isEnc?1:sd-1))%sd; }
-                else if(c1===c2) { r1=(r1+(isEnc?1:sd-1))%sd; r2=(r2+(isEnc?1:sd-1))%sd; }
-                else { [c1, c2] = [c2, c1]; }
-                res += m[r1*sd+c1] + m[r2*sd+c2];
+            let gp = (c) => { let idx = m.indexOf(c); return [Math.floor(idx / sd), idx % sd]; };
+            
+            let cl = txt.toLowerCase().replace(new RegExp(`[^${abc}]`, 'g'), "");
+            if (!isEnc) {
+                // При расшифровке просто работаем с парами
+            } else {
+                // При шифровании готовим биграммы
+                let temp = "";
+                for(let i=0; i<cl.length; i++) {
+                    temp += cl[i];
+                    if(i + 1 < cl.length && cl[i] === cl[i+1]) temp += (lang === 'en' ? 'x' : 'х');
+                }
+                if(temp.length % 2 !== 0) temp += (lang === 'en' ? 'x' : 'х');
+                cl = temp;
+            }
+
+            for (let i = 0; i < cl.length; i += 2) {
+                let a = cl[i], b = cl[i + 1];
+                let [r1, c1] = gp(a), [r2, c2] = gp(b);
+                if (r1 === r2) {
+                    c1 = (c1 + (isEnc ? 1 : sd - 1)) % sd;
+                    c2 = (c2 + (isEnc ? 1 : sd - 1)) % sd;
+                } else if (c1 === c2) {
+                    r1 = (r1 + (isEnc ? 1 : sd - 1)) % sd;
+                    r2 = (r2 + (isEnc ? 1 : sd - 1)) % sd;
+                } else {
+                    [c1, c2] = [c2, c1];
+                }
+                res += m[r1 * sd + c1] + m[r2 * sd + c2];
             }
         }
         else if (type === 'morse') {
-            if(isEnc) res = txt.toLowerCase().split('').map(c => morseMap[c] ? morseMap[c] + " " : c).join('');
-            else { const rM = Object.fromEntries(Object.entries(morseMap).map(([k,v]) => [v,k])); res = txt.split(' ').map(c => rM[c] || c).join(''); }
+            if (isEnc) {
+                res = txt.toLowerCase().split('').map(c => morseMap[c] ? morseMap[c] : c).join(' ');
+            } else {
+                const rM = Object.fromEntries(Object.entries(morseMap).map(([k, v]) => [v, k]));
+                res = txt.trim().split(/\s+/).map(c => rM[c] || c).join('');
+            }
         }
 
         document.getElementById('output').value = res;
