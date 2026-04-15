@@ -90,10 +90,10 @@
         vigenere: { title: "Шифр Виженера", label: "Ключевое слово:", text: "Сдвиг по ключевому слову. <b>Условие:</b> введите слово на выбранном языке." },
         atbash: { title: "Шифр Атбаша", label: "Ключ (не нужен):", text: "Зеркальный алфавит. <b>Условие:</b> ключ не требуется." },
         gronsfeld: { title: "Шифр Гронсфельда", label: "Числовой ключ:", text: "Сдвиг по последовательности цифр. <b>Условие:</b> введите цифры." },
-        bacon: { title: "Шифр Бэкона", label: "Ключ (не нужен):", text: "Кодирует буквы в блоки 'a' и 'b'. <b>Условие:</b> теперь поддерживает русский и казахский (6-битная версия)." },
-        polybius: { title: "Квадрат Полибия", label: "Ключ (не нужен):", text: "Координаты букв в сетке. <b>Условие:</b> результат в цифрах." },
-        playfair: { title: "Шифр Плейфера", label: "Ключ (слово):", text: "Шифрует пары букв через матрицу. <b>Условие:</b> введите слово." },
-        morse: { title: "Азбука Морзе", label: "Ключ (не нужен):", text: "Точки и тире. <b>Условие:</b> разделяйте буквы пробелом при расшифровке." }
+        bacon: { title: "Шифр Бэкона", label: "Ключ (не нужен):", text: "Кодирует буквы в блоки 'a' и 'b'. <b>Условие:</b> поддерживает RU/KK (6-бит)." },
+        polybius: { title: "Квадрат Полибия", label: "Ключ (не нужен):", text: "Координаты букв в сетке (5x5 EN, 6x6 RU, 7x7 KK)." },
+        playfair: { title: "Шифр Плейфера", label: "Ключ (слово):", text: "Шифрует пары букв через матрицу. Автоматически обрабатывает повторы." },
+        morse: { title: "Азбука Морзе", label: "Ключ (не нужен):", text: "Точки и тире. Разделяйте буквы пробелом." }
     };
 
     const morseMap = { "а":".-","б":"-...","в":".--","г":"--.","д":"-..","е":".","ё":".","ж":"...-","з":"--..","и":"..","й":".---","к":"-.-","л":".-..","м":"--","н":"-.","о":"---","п":".--.","р":".-.","с":"...","т":"-","у":"..-","ф":"..-.","х":"....","ц":"-.-.","ч":"---.","ш":"----","щ":"--.-","ъ":"--.--","ы":"-.--","ь":"-..-","э":"..-..","ю":"..--","я":".-.-","a":".-","b":"-...","c":"-.-.","d":"-..","e":".","f":"..-.","g":"--.","h":"....","i":"..","j":".---","k":"-.-","l":".-..","m":"--","n":"-.","o":"---","p":".--.","q":"--.-","r":".-.","s":"...","t":"-","u":"..-","v":"...-","w":".--","x":"-..-","y":"-.--","z":"--..","ә":".-.-.","ғ":"--.-.","қ":"-.-..","ң":"--.--.","ө":"---..","ұ":"..-.-","ү":"..-..-","һ":"....-","і":"..-."," ":"/" };
@@ -140,7 +140,7 @@
             }).join('');
         }
         else if (type === 'vigenere') {
-            let vKey = key.toLowerCase().replace(new RegExp(`[^${abc}]`, 'g'), ""); 
+            let vKey = key.toLowerCase().split('').filter(c => abc.includes(c)).join('');
             if (!vKey) return document.getElementById('output').value = txt;
             let vI = 0;
             res = txt.split('').map(c => {
@@ -174,124 +174,74 @@
                 return c === c.toUpperCase() ? n.toUpperCase() : n;
             }).join('');
         }
-     else if (type === 'polybius') {
-            let currentAbc = abc;
+        else if (type === 'polybius') {
+            let curAbc = abc;
             let sd;
-
-            // Устанавливаем размер сетки согласно твоим требованиям
-            if (lang === 'en') {
-                sd = 5; // Сетка 5x5
-                // Удаляем 'j' из рабочего алфавита для расчетов, так как I и J в одной ячейке
-                currentAbc = "abcdefghiklmnopqrstuvwxyz"; 
-            } else if (lang === 'ru') {
-                sd = 6; // Сетка 6x6
-            } else if (lang === 'kk') {
-                sd = 7; // Сетка 7x7
-            }
+            if (lang === 'en') { sd = 5; curAbc = "abcdefghiklmnopqrstuvwxyz"; }
+            else if (lang === 'ru') { sd = 6; }
+            else { sd = 7; }
 
             if (isEnc) {
-                let inputTxt = txt.toLowerCase();
-                // Для английского заменяем j на i перед шифрованием
-                if (lang === 'en') inputTxt = inputTxt.replace(/j/g, "i");
-
-                res = inputTxt.split('').map(c => {
-                    let i = currentAbc.indexOf(c);
-                    if (i === -1) return c; // Если символ не в алфавите, не трогаем
-                    
-                    let row = Math.floor(i / sd) + 1;
-                    let col = (i % sd) + 1;
-                    return row.toString() + col.toString() + " ";
+                let it = txt.toLowerCase();
+                if (lang === 'en') it = it.replace(/j/g, "i");
+                res = it.split('').map(c => {
+                    let i = curAbc.indexOf(c);
+                    if (i === -1) return c;
+                    return (Math.floor(i / sd) + 1).toString() + (i % sd + 1).toString() + " ";
                 }).join('').trim();
             } else {
-                res = txt.trim().split(/\s+/).map(token => {
-                    // Проверяем, что токен — это 2 цифры
-                    if (token.length === 2 && /^\d+$/.test(token)) {
-                        let r = parseInt(token[0]) - 1;
-                        let c = parseInt(token[1]) - 1;
-                        let index = r * sd + c;
-                        
-                        let char = currentAbc[index];
-                        if (char) {
-                            // Если это 'i' в английском, можно вернуть "i/j", но обычно возвращают 'i'
-                            return char;
-                        }
-                        return "?";
+                res = txt.trim().split(/\s+/).map(t => {
+                    if (t.length === 2 && /^\d+$/.test(t)) {
+                        let idx = (parseInt(t[0]) - 1) * sd + (parseInt(t[1]) - 1);
+                        return curAbc[idx] || "?";
                     }
-                    return token;
+                    return t;
                 }).join('');
             }
         }
-       else if (type === 'playfair') {
-            let currentAbc = abc;
-            let sd;
-            let padChar; // Символ-заполнитель для создания пар
+        else if (type === 'playfair') {
+            let curAbc = abc;
+            let sd, pad;
+            if (lang === 'en') { sd = 5; pad = 'x'; curAbc = "abcdefghiklmnopqrstuvwxyz"; }
+            else if (lang === 'ru') { sd = 6; pad = 'х'; }
+            else { sd = 7; pad = 'х'; }
 
-            // Настройка сетки и алфавита под конкретный язык
-            if (lang === 'en') {
-                sd = 5;
-                padChar = 'x';
-                // Традиционно J заменяется на I
-                currentAbc = "abcdefghiklmnopqrstuvwxyz";
-            } else if (lang === 'ru') {
-                sd = 6;
-                padChar = 'х';
-                currentAbc = "абвгдеёжзийклмнопрстуфхцчшщъыьэюя";
-            } else {
-                sd = 7;
-                padChar = 'х';
-                currentAbc = "аәбвгғдеёжзийкқлмнңоөпрстуұүфхһцчшщъыіьэюя";
-            }
+            let matrix = Array.from(new Set((key.toLowerCase() + curAbc).split('').filter(c => curAbc.includes(c))));
+            let getPos = (c) => { let i = matrix.indexOf(c); return [Math.floor(i / sd), i % sd]; };
 
-            // 1. Создаем уникальную матрицу на основе ключа
-            let keyClean = (key.toLowerCase() + currentAbc).replace(new RegExp(`[^${currentAbc}]`, 'g'), "");
-            let matrix = Array.from(new Set(keyClean)); // Убираем дубликаты
+            let it = txt.toLowerCase();
+            if (lang === 'en') it = it.replace(/j/g, "i");
+            it = it.split('').filter(c => curAbc.includes(c)).join('');
 
-            let getPos = (char) => {
-                let idx = matrix.indexOf(char);
-                return [Math.floor(idx / sd), idx % sd];
-            };
-
-            // 2. Подготовка текста
-            let inputTxt = txt.toLowerCase();
-            if (lang === 'en') inputTxt = inputTxt.replace(/j/g, "i");
-            inputTxt = inputTxt.replace(new RegExp(`[^${currentAbc}]`, 'g'), "");
-
-            let prepared = "";
+            let prep = "";
             if (isEnc) {
-                for (let i = 0; i < inputTxt.length; i++) {
-                    prepared += inputTxt[i];
-                    if (i + 1 < inputTxt.length) {
-                        if (inputTxt[i] === inputTxt[i+1]) {
-                            prepared += padChar; // Если буквы в паре одинаковые, вставляем 'x'
-                        } else {
-                            prepared += inputTxt[++i];
-                        }
-                    }
+                for (let i = 0; i < it.length; i += 2) {
+                    let a = it[i], b = it[i+1];
+                    if (!b) { prep += a + pad; }
+                    else if (a === b) { prep += a + pad; i--; }
+                    else { prep += a + b; }
                 }
-                if (prepared.length % 2 !== 0) prepared += padChar; // Должно быть четное число
-            } else {
-                prepared = inputTxt;
-            }
+            } else { prep = it; }
 
-            // 3. Шифрование / Расшифровка
-            for (let i = 0; i < prepared.length; i += 2) {
-                let [r1, c1] = getPos(prepared[i]);
-                let [r2, c2] = getPos(prepared[i+1]);
-
-                if (r1 === r2) { // В одной строке
-                    c1 = (c1 + (isEnc ? 1 : sd - 1)) % sd;
-                    c2 = (c2 + (isEnc ? 1 : sd - 1)) % sd;
-                } else if (c1 === c2) { // В одном столбце
-                    r1 = (r1 + (isEnc ? 1 : sd - 1)) % sd;
-                    r2 = (r2 + (isEnc ? 1 : sd - 1)) % sd;
-                } else { // Прямоугольник
-                    let temp = c1;
-                    c1 = c2;
-                    c2 = temp;
-                }
+            for (let i = 0; i < prep.length; i += 2) {
+                let [r1, c1] = getPos(prep[i]), [r2, c2] = getPos(prep[i+1]);
+                if (r1 === r2) { c1 = (c1 + (isEnc ? 1 : sd - 1)) % sd; c2 = (c2 + (isEnc ? 1 : sd - 1)) % sd; }
+                else if (c1 === c2) { r1 = (r1 + (isEnc ? 1 : sd - 1)) % sd; r2 = (r2 + (isEnc ? 1 : sd - 1)) % sd; }
+                else { [c1, c2] = [c2, c1]; }
                 res += matrix[r1 * sd + c1] + matrix[r2 * sd + c2];
             }
         }
+        else if (type === 'morse') {
+            if (isEnc) {
+                res = txt.toLowerCase().split('').map(c => morseMap[c] || c).join(' ');
+            } else {
+                const rM = Object.fromEntries(Object.entries(morseMap).map(([k, v]) => [v, k]));
+                res = txt.trim().split(/\s+/).map(c => rM[c] || c).join('');
+            }
+        }
+
+        document.getElementById('output').value = res;
+    }
 </script>
 </body>
 </html>
