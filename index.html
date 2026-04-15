@@ -174,44 +174,53 @@
                 return c === c.toUpperCase() ? n.toUpperCase() : n;
             }).join('');
         }
-      else if (type === 'polybius') {
-    let currentAbc = abc;
-    let sd;
+     else if (type === 'polybius') {
+            let currentAbc = abc;
+            let sd;
 
-    // Спец-настройка для классического английского квадрата 5x5
-    if (lang === 'en') {
-        sd = 5;
-        // В классике J заменяется на I, чтобы влезть в 25 ячеек
-        currentAbc = "abcdefghiklmnopqrstuvwxyz"; 
-    } else {
-        // Для RU и KK оставляем динамический расчет (6x6 и 7x7)
-        sd = Math.ceil(Math.sqrt(currentAbc.length));
-    }
-    
-    if (isEnc) {
-        let inputTxt = txt.toLowerCase();
-        if (lang === 'en') inputTxt = inputTxt.replace(/j/g, "i");
-
-        res = inputTxt.split('').map(c => {
-            let i = currentAbc.indexOf(c);
-            if (i === -1) return c;
-            
-            let row = Math.floor(i / sd) + 1;
-            let col = (i % sd) + 1;
-            return row.toString() + col.toString() + " ";
-        }).join('').trim();
-    } else {
-        res = txt.trim().split(/\s+/).map(token => {
-            if (token.length === 2 && /^\d+$/.test(token)) {
-                let r = parseInt(token[0]) - 1;
-                let c = parseInt(token[1]) - 1;
-                let index = r * sd + c;
-                return currentAbc[index] || "?";
+            // Устанавливаем размер сетки согласно твоим требованиям
+            if (lang === 'en') {
+                sd = 5; // Сетка 5x5
+                // Удаляем 'j' из рабочего алфавита для расчетов, так как I и J в одной ячейке
+                currentAbc = "abcdefghiklmnopqrstuvwxyz"; 
+            } else if (lang === 'ru') {
+                sd = 6; // Сетка 6x6
+            } else if (lang === 'kk') {
+                sd = 7; // Сетка 7x7
             }
-            return token;
-        }).join('');
-    }
-}
+
+            if (isEnc) {
+                let inputTxt = txt.toLowerCase();
+                // Для английского заменяем j на i перед шифрованием
+                if (lang === 'en') inputTxt = inputTxt.replace(/j/g, "i");
+
+                res = inputTxt.split('').map(c => {
+                    let i = currentAbc.indexOf(c);
+                    if (i === -1) return c; // Если символ не в алфавите, не трогаем
+                    
+                    let row = Math.floor(i / sd) + 1;
+                    let col = (i % sd) + 1;
+                    return row.toString() + col.toString() + " ";
+                }).join('').trim();
+            } else {
+                res = txt.trim().split(/\s+/).map(token => {
+                    // Проверяем, что токен — это 2 цифры
+                    if (token.length === 2 && /^\d+$/.test(token)) {
+                        let r = parseInt(token[0]) - 1;
+                        let c = parseInt(token[1]) - 1;
+                        let index = r * sd + c;
+                        
+                        let char = currentAbc[index];
+                        if (char) {
+                            // Если это 'i' в английском, можно вернуть "i/j", но обычно возвращают 'i'
+                            return char;
+                        }
+                        return "?";
+                    }
+                    return token;
+                }).join('');
+            }
+        }
         else if (type === 'playfair') {
             // Создаем матрицу на основе алфавита и ключа
             let m = Array.from(new Set((key.toLowerCase() + abc).replace(new RegExp(`[^${abc}]`, 'g'), "")));
