@@ -174,21 +174,37 @@
                 return c === c.toUpperCase() ? n.toUpperCase() : n;
             }).join('');
         }
-        else if (type === 'polybius') {
-            let sd = Math.ceil(Math.sqrt(abc.length));
-            if (isEnc) {
-                res = txt.toLowerCase().split('').map(c => {
-                    let i = abc.indexOf(c);
-                    return i === -1 ? c : (Math.floor(i / sd) + 1).toString() + (i % sd + 1).toString() + " ";
-                }).join('').trim();
-            } else {
-                res = txt.trim().split(/\s+/).map(x => {
-                    if (x.length !== 2) return x;
-                    let r = parseInt(x[0]) - 1, c = parseInt(x[1]) - 1;
-                    return abc[r * sd + c] || x;
-                }).join('');
+       else if (type === 'polybius') {
+    // Вычисляем сторону квадрата динамически
+    // RU: 33 буквы -> 6x6 | EN: 26 букв -> 6x6 | KK: 42 буквы -> 7x7
+    let sd = Math.ceil(Math.sqrt(abc.length)); 
+    
+    if (isEnc) {
+        res = txt.toLowerCase().split('').map(c => {
+            let i = abc.indexOf(c);
+            // Если символа нет в алфавите (пробел, точка, число), оставляем как есть
+            if (i === -1) return c;
+            
+            let row = Math.floor(i / sd) + 1;
+            let col = (i % sd) + 1;
+            return row.toString() + col.toString() + " ";
+        }).join('').trim();
+    } else {
+        // Очищаем ввод от лишних пробелов, но сохраняем структуру
+        let tokens = txt.trim().split(/\s+/);
+        res = tokens.map(token => {
+            // Если токен — это две цифры (координаты)
+            if (token.length === 2 && /^\d+$/.test(token)) {
+                let r = parseInt(token[0]) - 1;
+                let c = parseInt(token[1]) - 1;
+                let index = r * sd + c;
+                return abc[index] || "?";
             }
-        }
+            // Если это не цифры (например, знак препинания), возвращаем как есть
+            return token;
+        }).join('');
+    }
+}
         else if (type === 'playfair') {
             // Создаем матрицу на основе алфавита и ключа
             let m = Array.from(new Set((key.toLowerCase() + abc).replace(new RegExp(`[^${abc}]`, 'g'), "")));
